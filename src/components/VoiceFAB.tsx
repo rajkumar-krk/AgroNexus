@@ -33,7 +33,7 @@ export function VoiceFAB() {
                     key={i}
                     animate={{ height: [4, 12, 4] }}
                     transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                    className="w-1 bg-white rounded-full"
+                    className="w-1 bg-card rounded-full"
                   />
                 ))}
               </div>

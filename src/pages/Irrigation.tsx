@@ -3,13 +3,13 @@ import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
-import { 
-  Droplets, 
-  Power, 
-  Clock, 
-  CloudRain, 
-  Zap, 
-  Thermometer, 
+import {
+  Droplets,
+  Power,
+  Clock,
+  CloudRain,
+  Zap,
+  Thermometer,
   FlaskConical,
   BarChart3,
   ChevronRight,
@@ -60,7 +60,7 @@ export function Irrigation() {
       </div>
 
       {/* Main Control Card */}
-      <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-white to-sky/5">
+      <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-card to-sky/5">
         <div className="flex flex-col md:flex-row gap-8 items-center">
           <div className="flex-1 space-y-6 w-full">
             <div>
@@ -69,7 +69,7 @@ export function Irrigation() {
                 <span className="text-4xl font-black text-primary">{Math.round(moisture)}%</span>
               </div>
               <div className="relative h-4 bg-muted rounded-full overflow-hidden shadow-inner">
-                <motion.div 
+                <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${moisture}%` }}
                   className={`h-full transition-all duration-1000 rounded-full ${moisture < 40 ? 'bg-destructive' : moisture > 80 ? 'bg-sky' : 'bg-sprout'}`}
@@ -87,14 +87,14 @@ export function Irrigation() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-white rounded-xl border border-border shadow-sm">
+              <div className="p-3 bg-card rounded-xl border border-border shadow-sm">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Clock size={14} />
                   <span className="text-[10px] font-bold uppercase">Next Scheduled</span>
                 </div>
                 <p className="text-sm font-bold">Tomorrow, 6:00 AM</p>
               </div>
-              <div className="p-3 bg-white rounded-xl border border-border shadow-sm">
+              <div className="p-3 bg-card rounded-xl border border-border shadow-sm">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <CloudRain size={14} />
                   <span className="text-[10px] font-bold uppercase">Suggestion</span>
@@ -104,15 +104,14 @@ export function Irrigation() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border-2 border-border shadow-xl relative group w-full md:w-auto min-w-[200px]">
+          <div className="flex flex-col items-center justify-center p-8 bg-card rounded-3xl border-2 border-border shadow-xl relative group w-full md:w-auto min-w-[200px]">
             <div className={`absolute inset-0 bg-sky/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl ${pumpStatus === 'on' ? 'animate-pulse opacity-100' : ''}`} />
-            <button 
+            <button
               onClick={togglePump}
-              className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl relative z-10 ${
-                pumpStatus === 'on' 
-                  ? 'bg-destructive text-white scale-110' 
+              className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl relative z-10 ${pumpStatus === 'on'
+                  ? 'bg-destructive text-white scale-110'
                   : 'bg-primary text-white hover:scale-105'
-              }`}
+                }`}
             >
               <Power size={40} />
             </button>
@@ -142,25 +141,25 @@ export function Irrigation() {
           </h3>
           <Button variant="ghost" size="sm" className="text-sky font-bold">Details</Button>
         </div>
-        
+
         <div className="h-40 flex items-end justify-between gap-2 px-2">
           {[45, 60, 30, 80, 50, 40, 70].map((h, i) => (
             <div key={i} className="flex-1 flex flex-col items-center group cursor-pointer">
               <div className="w-full relative">
-                <motion.div 
+                <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${h}%` }}
                   className="w-full bg-sky/20 group-hover:bg-sky/40 rounded-t-lg transition-colors border-t border-sky/30"
                 />
               </div>
-              <span className="text-[10px] font-bold text-muted-foreground mt-2">D{i+1}</span>
+              <span className="text-[10px] font-bold text-muted-foreground mt-2">D{i + 1}</span>
             </div>
           ))}
         </div>
 
         <div className="mt-6 p-4 rounded-xl bg-sprout/10 border border-sprout/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center shadow-sm">
               <TrendingUp size={20} className="text-sprout" />
             </div>
             <div>
@@ -222,15 +221,15 @@ function SensorCard({ icon, label, value, status }: { icon: any, label: string, 
 
 function TrendingUp({ size, className }: { size: number, className?: string }) {
   return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2.5" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />

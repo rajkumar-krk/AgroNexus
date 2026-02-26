@@ -3,22 +3,22 @@ import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
-import { 
-  Users, 
-  MessageSquare, 
-  Trophy, 
-  PlayCircle, 
-  Search, 
-  Mic, 
-  CheckCircle2, 
-  Eye, 
-  ThumbsUp, 
+import {
+  Users,
+  MessageSquare,
+  Trophy,
+  PlayCircle,
+  Search,
+  Mic,
+  CheckCircle2,
+  Eye,
+  ThumbsUp,
   Share2,
   ChevronRight,
   Plus
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { blink } from '../lib/blink'
+import { TrustScore } from '../components/TrustScore'
 
 export function Community() {
   const [activeCategory, setActiveCategory] = useState('questions')
@@ -28,37 +28,43 @@ export function Community() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await blink.db.community_posts.list({
-          orderBy: { createdAt: 'desc' }
-        })
-        setPosts(data)
-
-        if (data.length === 0) {
-          const seedPosts = [
-            { 
-              authorName: 'Suresh Kumar', 
-              authorId: 'u1', 
-              title: 'Tomato leaf curl - organic cure?', 
-              content: 'My tomato plants in Block C are showing signs of leaf curl. Are there any organic sprays I can use before it spreads?',
-              viewsCount: 1240, 
-              answersCount: 23, 
-              isVerified: 1, 
-              userId: 'demo' 
-            },
-            { 
-              authorName: 'Meena Sharma', 
-              authorId: 'u2', 
-              title: 'Successful drip irrigation setup', 
-              content: 'Finally set up the IoT drip system. Saved nearly 40% water this week! Happy to help others with the technical part.',
-              viewsCount: 850, 
-              answersCount: 12, 
-              isVerified: 0, 
-              userId: 'demo' 
-            }
-          ]
-          await blink.db.community_posts.createMany(seedPosts)
-          setPosts(await blink.db.community_posts.list())
-        }
+        // Use local seed data for community posts
+        const seedPosts = [
+          {
+            id: 'cp-1',
+            authorName: 'Suresh Kumar',
+            authorId: 'u1',
+            title: 'Tomato leaf curl - organic cure?',
+            content: 'My tomato plants in Block C are showing signs of leaf curl. Are there any organic sprays I can use before it spreads?',
+            viewsCount: 1240,
+            answersCount: 23,
+            isVerified: 1,
+            userId: 'demo'
+          },
+          {
+            id: 'cp-2',
+            authorName: 'Meena Sharma',
+            authorId: 'u2',
+            title: 'Successful drip irrigation setup',
+            content: 'Finally set up the IoT drip system. Saved nearly 40% water this week! Happy to help others with the technical part.',
+            viewsCount: 850,
+            answersCount: 12,
+            isVerified: 0,
+            userId: 'demo'
+          },
+          {
+            id: 'cp-3',
+            authorName: 'Anand Reddy',
+            authorId: 'u3',
+            title: 'Best Rabi season practices for wheat in Telangana',
+            content: 'What seed variety and sowing practices are recommended for wheat in Telangana this season? Looking for veterans\' advice.',
+            viewsCount: 670,
+            answersCount: 8,
+            isVerified: 1,
+            userId: 'demo'
+          }
+        ]
+        setPosts(seedPosts)
       } catch (err) {
         console.error(err)
       } finally {
@@ -85,9 +91,12 @@ export function Community() {
         </h2>
         <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-          <Input className="pl-10 rounded-xl bg-white" placeholder="Search discussions..." />
+          <Input className="pl-10 rounded-xl bg-card" placeholder="Search discussions..." />
         </div>
       </div>
+
+      {/* Farmer Trust Score */}
+      <TrustScore />
 
       {/* Gamification Stats */}
       <Card className="p-4 bg-gradient-to-r from-primary to-secondary text-white overflow-hidden relative group">
@@ -101,7 +110,7 @@ export function Community() {
               <span className="font-heading font-black text-xl tracking-tight">Krishi Mitra (Farmer Friend)</span>
             </div>
             <div className="w-full md:w-64 h-2.5 bg-white/20 rounded-full overflow-hidden shadow-inner">
-              <motion.div 
+              <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: '65%' }}
                 className="h-full bg-accent"
@@ -123,11 +132,10 @@ export function Community() {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex items-center space-x-2 px-6 py-3 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
-              activeCategory === cat.id 
-                ? 'bg-primary text-white shadow-lg' 
-                : 'bg-white text-muted-foreground hover:bg-muted'
-            }`}
+            className={`flex items-center space-x-2 px-6 py-3 rounded-full font-bold text-sm whitespace-nowrap transition-all ${activeCategory === cat.id
+              ? 'bg-primary text-white shadow-lg'
+              : 'bg-card text-muted-foreground hover:bg-muted'
+              }`}
           >
             <cat.icon size={18} />
             <span>{cat.label}</span>
@@ -216,15 +224,15 @@ export function Community() {
           <PlayCircle size={20} className="text-destructive" /> Featured Video Tips
         </h3>
         <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
-          <VideoCard 
-            title="Drip Irrigation DIY" 
-            views="45k" 
-            img="https://images.unsplash.com/photo-1599148400620-8e1ff0bf28d8?auto=format&fit=crop&q=80" 
+          <VideoCard
+            title="Drip Irrigation DIY"
+            views="45k"
+            img="https://images.unsplash.com/photo-1599148400620-8e1ff0bf28d8?auto=format&fit=crop&q=80"
           />
-          <VideoCard 
-            title="Organic Pest Control" 
-            views="120k" 
-            img="https://images.unsplash.com/photo-1597362905293-385650fd540e?auto=format&fit=crop&q=80" 
+          <VideoCard
+            title="Organic Pest Control"
+            views="120k"
+            img="https://images.unsplash.com/photo-1597362905293-385650fd540e?auto=format&fit=crop&q=80"
           />
         </div>
       </div>
