@@ -1,0 +1,1 @@
+AgroNexus major update: implemented full IoT cold-chain monitoring dashboard with hamburger navigation, multi-batch crop management, realistic demo data, profile system, and scalable architecture ready for hardware integration  
