@@ -1,9 +1,9 @@
-import { Mic, MessageCircle } from 'lucide-react'
+import React, { useState } from 'react'
+import { Mic } from 'lucide-react'
 import { Button } from './ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
 
-export function VoiceFAB() {
+export function FloatingMicButton() {
   const [isListening, setIsListening] = useState(false)
 
   const toggleListening = () => {
@@ -17,23 +17,15 @@ export function VoiceFAB() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-      {/* Message Button */}
-      <Button
-        className="w-14 h-14 rounded-full shadow-2xl transition-all duration-300 bg-green-500 hover:bg-green-600 hover:scale-110"
-        onClick={() => console.log('Message button clicked')}
-      >
-        <MessageCircle size={24} className="text-white" />
-      </Button>
-
-      {/* Mic Button */}
+    <div className="fixed bottom-6 left-6 z-50">
+      {/* Listening Indicator */}
       <AnimatePresence>
         {isListening && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="absolute bottom-20 right-0 bg-primary text-white p-4 rounded-2xl shadow-2xl w-64 border border-white/20"
+            className="absolute bottom-20 left-0 bg-primary text-white p-4 rounded-2xl shadow-2xl w-64 border border-white/20"
           >
             <div className="flex items-center space-x-3 mb-2">
               <div className="flex space-x-1">
@@ -53,13 +45,21 @@ export function VoiceFAB() {
         )}
       </AnimatePresence>
 
+      {/* Mic Button */}
       <Button
         onClick={toggleListening}
-        className={`w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${
-          isListening ? 'bg-red-500 hover:bg-red-600 scale-110' : 'bg-green-500 hover:bg-green-600'
+        className={`w-14 h-14 rounded-full shadow-lg transition-all duration-300 ${
+          isListening 
+            ? 'bg-red-500 hover:bg-red-600 scale-110' 
+            : 'bg-green-500 hover:bg-green-600 hover:scale-110'
         }`}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '24px'
+        }}
       >
-        <Mic size={24} className={isListening ? 'animate-pulse' : ''} />
+        <Mic size={24} className={isListening ? 'animate-pulse text-white' : 'text-white'} />
       </Button>
     </div>
   )

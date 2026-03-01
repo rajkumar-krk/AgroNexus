@@ -1,16 +1,44 @@
+import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
-import { Sprout, Bell, LogOut } from 'lucide-react'
+import { Sprout, Bell, Menu } from 'lucide-react'
+import { HamburgerButton } from './HamburgerSidebar'
 
 export function Navbar({ userName }: { userName: string }) {
+    const [scrolled, setScrolled] = useState(false)
+
+    useEffect(() => {
+        let ticking = false
+        const onScroll = () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    setScrolled(window.scrollY > 8)
+                    ticking = false
+                })
+                ticking = true
+            }
+        }
+        onScroll()
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
+
     return (
-        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+        <nav
+            className={`sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border transition-shadow duration-300 ${scrolled ? 'shadow-md shadow-primary/5' : ''}`}
+        >
             <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                {/* Logo */}
-                <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                        <Sprout size={20} className="text-white" />
+                {/* Left Side - Logo and Hamburger */}
+                <div className="flex items-center gap-3">
+                    {/* Hamburger Button for Mobile */}
+                    <HamburgerButton />
+                    
+                    {/* Logo */}
+                    <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                            <Sprout size={20} className="text-white" />
+                        </div>
+                        <span className="text-lg font-heading font-black hidden sm:block">AgroNexus</span>
                     </div>
-                    <span className="text-lg font-heading font-black hidden sm:block">AgriSmart</span>
                 </div>
 
                 {/* Right Side */}

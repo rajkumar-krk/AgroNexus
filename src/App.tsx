@@ -1,9 +1,25 @@
 import { useState } from 'react'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { LandingPage } from './pages/LandingPage'
 import { Navbar } from './components/layout/Navbar'
 import { BottomNav } from './components/layout/BottomNav'
+import { HamburgerSidebar, HamburgerButton } from './components/layout/HamburgerSidebar'
+import { Sidebar } from './components/layout/Sidebar'
+import { FloatingMicButton } from './components/FloatingMicButton'
+import { AppProvider } from './context/AppContext'
+import { BatchProvider } from './context/BatchContext'
 import { Dashboard } from './pages/Dashboard'
+import { IoTMonitoring } from './pages/IoTMonitoring'
+import { ColdStorage } from './pages/ColdStorage'
+import { ShipmentGPS } from './pages/ShipmentGPS'
+import { SpoilageDetection } from './pages/SpoilageDetection'
+import { Traceability } from './pages/Traceability'
+import { CloudAlerts } from './pages/CloudAlerts'
+import { StorageAnalytics } from './pages/StorageAnalytics'
+import { ShelfLife } from './pages/ShelfLife'
+import { Profile } from './pages/Profile.jsx'
 import { CropDoctor } from './pages/CropDoctor'
 import { Irrigation } from './pages/Irrigation'
 import { Marketplace } from './pages/Marketplace'
@@ -11,19 +27,78 @@ import { Community } from './pages/Community'
 import { Analytics } from './pages/Analytics'
 import { CropAdvisor } from './pages/CropAdvisor'
 import { AIChatbot } from './components/AIChatbot'
-import { VoiceFAB } from './components/VoiceFAB'
 import { Spinner } from './components/ui/spinner'
+import { ErrorBoundary } from './components/ErrorBoundary'
+
+// Dashboard Layout Component
+function DashboardLayout() {
+  return (
+    <div className="min-h-screen bg-background pb-20 lg:pb-0">
+      <Navbar userName="User" />
+      
+      {/* Hamburger Sidebar for Mobile */}
+      <HamburgerSidebar />
+      
+      <main className="max-w-7xl mx-auto px-4 py-6 lg:flex lg:gap-8">
+        {/* Sidebar for Desktop - Keep original sidebar for large screens */}
+        <div className="hidden lg:block">
+          <Sidebar />
+        </div>
+        
+        {/* Main Content */}
+        <section className="flex-1">
+          <Outlet />
+        </section>
+      </main>
+
+      <BottomNav activeTab="dashboard" setActiveTab={() => {}} />
+      <AIChatbot />
+      <FloatingMicButton />
+    </div>
+  )
+}
+
+// Main authenticated dashboard component
+function AuthenticatedDashboard() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="iot-monitoring" element={<IoTMonitoring />} />
+        <Route path="cold-storage" element={<ColdStorage />} />
+        <Route path="shipment-gps" element={<ShipmentGPS />} />
+        <Route path="spoilage-detection" element={<SpoilageDetection />} />
+        <Route path="traceability" element={<Traceability />} />
+        <Route path="cloud-alerts" element={<CloudAlerts />} />
+        <Route path="storage-analytics" element={<StorageAnalytics />} />
+        <Route path="shelf-life" element={<ShelfLife />} />
+        <Route path="profile" element={<Profile />} />
+        
+        {/* Legacy routes - redirect to new ones */}
+        <Route path="doctor" element={<Navigate to="/dashboard/spoilage-detection" replace />} />
+        <Route path="irrigation" element={<Navigate to="/dashboard/cold-storage" replace />} />
+        <Route path="market" element={<Navigate to="/dashboard/shipment-gps" replace />} />
+        <Route path="community" element={<Navigate to="/dashboard/traceability" replace />} />
+        <Route path="analytics" element={<Navigate to="/dashboard/storage-analytics" replace />} />
+        <Route path="advisor" element={<Navigate to="/dashboard/shelf-life" replace />} />
+        
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Route>
+    </Routes>
+  )
+}
 
 function App() {
   const { user, loading, login } = useAuth()
-  const [activeTab, setActiveTab] = useState('home')
 
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">
           <Spinner className="size-8 text-primary" />
-          <p className="text-primary font-bold animate-pulse">Namaste... Planting Seeds of Innovation 🌱</p>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -33,102 +108,16 @@ function App() {
     return <LandingPage onLogin={login} />
   }
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return <Dashboard />
-      case 'doctor':
-        return <CropDoctor />
-      case 'irrigation':
-        return <Irrigation />
-      case 'market':
-        return <Marketplace />
-      case 'community':
-        return <Community />
-      case 'analytics':
-        return <Analytics />
-      case 'advisor':
-        return <CropAdvisor />
-      default:
-        return <Dashboard />
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-0">
-      <Navbar userName={user?.displayName || 'Farmer Ji'} />
-
-      <main className="max-w-7xl mx-auto px-4 py-6 lg:flex lg:gap-8">
-        {/* Sidebar Nav for Desktop */}
-        <aside className="hidden lg:flex flex-col w-64 space-y-2 sticky top-24 h-fit">
-          <SidebarButton
-            active={activeTab === 'home'}
-            onClick={() => setActiveTab('home')}
-            label="Home Dashboard"
-            icon="🏠"
-          />
-          <SidebarButton
-            active={activeTab === 'doctor'}
-            onClick={() => setActiveTab('doctor')}
-            label="AI Crop Doctor"
-            icon="🔬"
-          />
-          <SidebarButton
-            active={activeTab === 'irrigation'}
-            onClick={() => setActiveTab('irrigation')}
-            label="Smart Irrigation"
-            icon="💧"
-          />
-          <SidebarButton
-            active={activeTab === 'market'}
-            onClick={() => setActiveTab('market')}
-            label="Mandi Marketplace"
-            icon="💰"
-          />
-          <SidebarButton
-            active={activeTab === 'community'}
-            onClick={() => setActiveTab('community')}
-            label="Kisan Connect"
-            icon="👥"
-          />
-          <SidebarButton
-            active={activeTab === 'analytics'}
-            onClick={() => setActiveTab('analytics')}
-            label="Farm Analytics"
-            icon="📊"
-          />
-          <SidebarButton
-            active={activeTab === 'advisor'}
-            onClick={() => setActiveTab('advisor')}
-            label="AI Crop Advisor"
-            icon="🧠"
-          />
-        </aside>
-
-        <section className="flex-1">
-          {renderContent()}
-        </section>
-      </main>
-
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
-      <AIChatbot />
-      <VoiceFAB />
-    </div>
-  )
-}
-
-function SidebarButton({ active, onClick, label, icon }: { active: boolean, onClick: () => void, label: string, icon: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-left font-bold ${active
-        ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]'
-        : 'bg-card border border-border text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5'
-        }`}
-    >
-      <span className="text-xl">{icon}</span>
-      <span>{label}</span>
-    </button>
+    <AppProvider>
+      <BatchProvider>
+        <Router>
+          <ErrorBoundary>
+            <AuthenticatedDashboard />
+          </ErrorBoundary>
+        </Router>
+      </BatchProvider>
+    </AppProvider>
   )
 }
 

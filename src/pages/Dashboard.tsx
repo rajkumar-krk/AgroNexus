@@ -1,227 +1,423 @@
-import { useState } from 'react'
-import { Card } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import { Button } from '../components/ui/button'
-import {
-    Sun,
-    Droplets,
-    TrendingUp,
-    Leaf,
-    IndianRupee,
-    AlertTriangle,
-    CheckCircle2,
-    Sprout,
-    Timer,
-    Wind,
-    Radar,
-    CalendarDays,
-    Shield,
-    Beaker,
-} from 'lucide-react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { fadeInUp } from '../animations/fadeInUp'
+import { createStaggerContainer } from '../animations/staggerContainer'
+import { useBatch } from '../context/BatchContext'
+import { 
+  MetricCard, 
+  DeviceStatusCard, 
+  SectionCard, 
+  AlertItem,
+  ChartCard
+} from '../components/widgets'
+import { AddBatchModal } from '../components/AddBatchModal'
+import { BatchFilter } from '../components/BatchFilter'
+import { 
+  Activity, 
+  Thermometer, 
+  Droplets, 
+  Wind, 
+  Shield,
+  Snowflake,
+  Truck,
+  AlertTriangle,
+  TrendingUp,
+  MapPin,
+  FlaskConical,
+  QrCode,
+  Bell,
+  BarChart3,
+  Clock,
+  Plus,
+  Package
+} from 'lucide-react'
 
-// Import existing unique feature components
-import { PestRadar } from '../components/PestRadar'
-import { SprayWindow } from '../components/SprayWindow'
-import { TrustScore } from '../components/TrustScore'
-import { SoilRestCalendar } from '../components/SoilRestCalendar'
-import { CropCalendar } from '../components/CropCalendar'
+const container = createStaggerContainer(0.08)
 
-const weatherData = {
-    temp: 32,
-    condition: 'Partly Cloudy',
-    humidity: 68,
-    windSpeed: 12,
-    forecast: [
-        { day: 'Today', icon: '☀️', high: 32, low: 22 },
-        { day: 'Tue', icon: '⛅', high: 30, low: 21 },
-        { day: 'Wed', icon: '🌧️', high: 28, low: 20 },
-        { day: 'Thu', icon: '☀️', high: 33, low: 22 },
-        { day: 'Fri', icon: '⛅', high: 31, low: 21 },
-    ],
-}
-
-const activeCrops = [
-    { name: 'Wheat (Sharbati)', stage: 'Tillering', health: 92, daysLeft: 75, emoji: '🌾' },
-    { name: 'Cotton (BT)', stage: 'Flowering', health: 85, daysLeft: 45, emoji: '🧶' },
-    { name: 'Soybean', stage: 'Pod Filling', health: 78, daysLeft: 30, emoji: '🫘' },
+const featureCards = [
+  {
+    title: 'IoT Monitoring',
+    description: 'Real-time sensor data and device monitoring',
+    icon: Activity,
+    path: '/iot-monitoring'
+  },
+  {
+    title: 'Cold Storage',
+    description: 'Storage unit health and performance',
+    icon: Snowflake,
+    path: '/cold-storage'
+  },
+  {
+    title: 'GPS Tracking',
+    description: 'Live shipment tracking and monitoring',
+    icon: MapPin,
+    path: '/shipment-gps'
+  },
+  {
+    title: 'Spoilage Detection',
+    description: 'AI-powered spoilage risk analysis',
+    icon: FlaskConical,
+    path: '/spoilage-detection'
+  },
+  {
+    title: 'Traceability',
+    description: 'Complete supply chain traceability',
+    icon: QrCode,
+    path: '/traceability'
+  },
+  {
+    title: 'Cloud Alerts',
+    description: 'Real-time alerts and notifications',
+    icon: Bell,
+    path: '/cloud-alerts'
+  },
+  {
+    title: 'Storage Analytics',
+    description: 'Performance analytics and insights',
+    icon: BarChart3,
+    path: '/storage-analytics'
+  },
+  {
+    title: 'Shelf Life',
+    description: 'AI-powered shelf life predictions',
+    icon: Clock,
+    path: '/shelf-life'
+  }
 ]
-
-const alerts = [
-    { type: 'warning', message: 'Yellow Rust risk HIGH — spray Propiconazole within 48h', time: '2h ago' },
-    { type: 'info', message: 'Best time to sell wheat: prices up ₹120/qtl this week', time: '5h ago' },
-    { type: 'success', message: 'Drip irrigation cycle completed — saved 2,400L water', time: '1d ago' },
-]
-
-type FeatureView = 'dashboard' | 'pest-radar' | 'spray-window' | 'trust-score' | 'soil-rest' | 'crop-calendar'
-
-const container = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-}
-const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }
 
 export function Dashboard() {
-    const [featureView, setFeatureView] = useState<FeatureView>('dashboard')
+  const { 
+    batches = [], 
+    activeBatches = [], 
+    highRiskBatches = [], 
+    inStorageBatches = [], 
+    inTransitBatches = [],
+    stats,
+    loading,
+    selectedBatch,
+    selectBatch
+  } = useBatch()
+  
+  const [showAddBatchModal, setShowAddBatchModal] = useState(false)
+  const [filteredBatchId, setFilteredBatchId] = useState(null)
 
-    // Render sub-feature views
-    if (featureView !== 'dashboard') {
-        return (
-            <div className="space-y-4 pb-12">
-                <Button variant="ghost" onClick={() => setFeatureView('dashboard')} className="rounded-xl font-bold">
-                    ← Back to Dashboard
-                </Button>
-                {featureView === 'pest-radar' && <PestRadar />}
-                {featureView === 'spray-window' && <SprayWindow />}
-                {featureView === 'trust-score' && <TrustScore />}
-                {featureView === 'soil-rest' && <SoilRestCalendar />}
-                {featureView === 'crop-calendar' && <CropCalendar />}
-            </div>
-        )
+  // Calculate aggregated metrics from batches with safe defaults
+  const aggregatedMetrics = React.useMemo(() => {
+    if (!batches || batches.length === 0) {
+      return { avgTemp: 0, avgHumidity: 0, totalQuantity: 0 }
     }
+    
+    const totalTemp = batches.reduce((sum, batch) => sum + (batch.temperature || 0), 0)
+    const totalHumidity = batches.reduce((sum, batch) => sum + (batch.humidity || 0), 0)
+    const totalQty = batches.reduce((sum, batch) => sum + (batch.quantity || 0), 0)
+    
+    return {
+      avgTemp: Math.round((totalTemp / batches.length) * 10) / 10,
+      avgHumidity: Math.round(totalHumidity / batches.length),
+      totalQuantity: totalQty
+    }
+  }, [batches])
 
+  // Filter batches based on selection with safe defaults
+  const displayBatches = React.useMemo(() => {
+    if (!batches || !Array.isArray(batches)) return []
+    if (!filteredBatchId) return batches
+    return batches.filter(batch => batch && batch.id === filteredBatchId)
+  }, [batches, filteredBatchId])
+
+  if (loading && (!batches || batches.length === 0)) {
     return (
-        <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 pb-12">
-            {/* Greeting & Weather */}
-            <motion.div variants={item}>
-                <Card className="p-6 relative overflow-hidden">
-                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Good Morning</p>
-                            <h1 className="text-2xl font-heading font-black">Namaste, Farmer Ji! 🙏</h1>
-                            <p className="text-sm text-muted-foreground mt-1">Your farm is looking healthy today</p>
-                        </div>
-                        <div className="flex items-center gap-4 px-4 py-3 rounded-xl bg-muted/50 border border-border">
-                            <div className="text-center">
-                                <p className="text-3xl font-black text-primary">{weatherData.temp}°</p>
-                                <p className="text-[10px] font-bold text-muted-foreground">{weatherData.condition}</p>
-                            </div>
-                            <div className="text-xs space-y-1 text-muted-foreground">
-                                <div className="flex items-center gap-1"><Droplets size={12} /> {weatherData.humidity}%</div>
-                                <div className="flex items-center gap-1"><Wind size={12} /> {weatherData.windSpeed} km/h</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex gap-2 mt-4 overflow-x-auto pb-1">
-                        {weatherData.forecast.map((d, i) => (
-                            <div key={d.day} className={`flex-shrink-0 text-center px-3 py-2 rounded-xl border ${i === 0 ? 'border-primary/30 bg-primary/5' : 'border-border'}`}>
-                                <p className="text-[10px] font-bold text-muted-foreground">{d.day}</p>
-                                <p className="text-lg">{d.icon}</p>
-                                <p className="text-xs font-bold">{d.high}°</p>
-                                <p className="text-[10px] text-muted-foreground">{d.low}°</p>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-            </motion.div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                    { label: 'Active Crops', value: '3', icon: Sprout, color: 'text-primary' },
-                    { label: 'Farm Area', value: '5.2 Ha', icon: Leaf, color: 'text-secondary' },
-                    { label: 'This Season', value: '₹1.15L', icon: IndianRupee, color: 'text-accent' },
-                    { label: 'Next Harvest', value: '30 days', icon: Timer, color: 'text-amber-500' },
-                ].map((stat) => (
-                    <motion.div key={stat.label} variants={item}>
-                        <Card className="p-4 hover:border-primary/30 transition-colors group">
-                            <div className="flex items-center gap-2 mb-1">
-                                <stat.icon size={16} className={stat.color} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</span>
-                            </div>
-                            <p className="text-2xl font-black">{stat.value}</p>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
-
-            {/* ═══ UNIQUE FEATURES QUICK ACCESS ═══ */}
-            <motion.div variants={item}>
-                <h3 className="text-lg font-bold flex items-center gap-2 mb-3">
-                    🧬 Unique Features
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {[
-                        { id: 'pest-radar' as FeatureView, icon: '🦟', label: 'Pest Radar', desc: '50km early warning' },
-                        { id: 'spray-window' as FeatureView, icon: '🧪', label: 'Spray Window', desc: '7-day optimal timing' },
-                        { id: 'trust-score' as FeatureView, icon: '⭐', label: 'Trust Score', desc: 'Your farmer rating' },
-                        { id: 'soil-rest' as FeatureView, icon: '📅', label: 'Soil Rest', desc: 'Rotation planner' },
-                        { id: 'crop-calendar' as FeatureView, icon: '🌱', label: 'Crop Calendar', desc: 'Season timeline' },
-                    ].map((f) => (
-                        <motion.div key={f.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                            <Card
-                                className="p-4 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all group"
-                                onClick={() => setFeatureView(f.id)}
-                            >
-                                <span className="text-2xl">{f.icon}</span>
-                                <p className="text-sm font-bold mt-2 group-hover:text-primary transition-colors">{f.label}</p>
-                                <p className="text-[10px] text-muted-foreground">{f.desc}</p>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </div>
-            </motion.div>
-
-            {/* Active Crops */}
-            <motion.div variants={item}>
-                <Card className="p-6">
-                    <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
-                        <Sprout size={20} className="text-primary" /> Active Crops
-                    </h3>
-                    <div className="space-y-3">
-                        {activeCrops.map((crop) => (
-                            <div key={crop.name} className="flex items-center gap-4 p-3 rounded-xl border border-border hover:border-primary/20 transition-colors">
-                                <span className="text-2xl">{crop.emoji}</span>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-sm">{crop.name}</span>
-                                        <Badge variant="outline" className="text-[9px] font-bold">{crop.stage}</Badge>
-                                    </div>
-                                    <div className="mt-1.5 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full rounded-full transition-all duration-500"
-                                            style={{
-                                                width: `${crop.health}%`,
-                                                backgroundColor: crop.health > 85 ? 'hsl(89, 72%, 48%)' : crop.health > 70 ? 'hsl(38, 92%, 55%)' : 'hsl(6, 78%, 57%)',
-                                            }}
-                                        />
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground mt-1">Health: {crop.health}% • Harvest in {crop.daysLeft} days</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-            </motion.div>
-
-            {/* Alerts */}
-            <motion.div variants={item}>
-                <Card className="p-6">
-                    <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
-                        <AlertTriangle size={20} className="text-amber-500" /> Alerts & Recommendations
-                    </h3>
-                    <div className="space-y-2">
-                        {alerts.map((alert, i) => (
-                            <div
-                                key={i}
-                                className={`p-3 rounded-xl border flex items-start gap-3 ${alert.type === 'warning' ? 'border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-800'
-                                        : alert.type === 'success' ? 'border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-800'
-                                            : 'border-blue-200 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-800'
-                                    }`}
-                            >
-                                {alert.type === 'warning' && <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />}
-                                {alert.type === 'success' && <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />}
-                                {alert.type === 'info' && <TrendingUp size={16} className="text-blue-500 mt-0.5 shrink-0" />}
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold">{alert.message}</p>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">{alert.time}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-            </motion.div>
-        </motion.div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     )
+  }
+
+  return (
+    <motion.div
+      variants={container}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-100px' }}
+      className="space-y-6 pb-12"
+    >
+      {/* Header */}
+      <motion.div variants={fadeInUp}>
+        <SectionCard
+          title="Multi-Batch Cold Chain Monitoring"
+          subtitle={`Monitor ${batches.length} active crop batches in real time`}
+          icon={Activity}
+          actions={
+            <div className="flex items-center gap-3">
+              <BatchFilter 
+                selectedBatch={filteredBatchId} 
+                onBatchChange={setFilteredBatchId}
+              />
+              <button
+                onClick={() => setShowAddBatchModal(true)}
+                className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm"
+              >
+                <Plus size={16} />
+                Add Batch
+              </button>
+            </div>
+          }
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              title="Active Batches"
+              value={activeBatches.length}
+              icon={Package}
+              color="text-primary"
+              subtitle={`${inStorageBatches.length} in storage, ${inTransitBatches.length} in transit`}
+            />
+            <MetricCard
+              title="Avg Temperature"
+              value={`${aggregatedMetrics.avgTemp}°C`}
+              icon={Thermometer}
+              color="text-blue-500"
+              subtitle="Across all batches"
+            />
+            <MetricCard
+              title="Avg Humidity"
+              value={`${aggregatedMetrics.avgHumidity}%`}
+              icon={Droplets}
+              color="text-green-500"
+              subtitle="Across all batches"
+            />
+            <MetricCard
+              title="High Risk Batches"
+              value={highRiskBatches.length}
+              icon={AlertTriangle}
+              color="text-red-500"
+              subtitle="Requires immediate attention"
+            />
+          </div>
+        </SectionCard>
+      </motion.div>
+
+      {/* Batch Overview */}
+      <motion.div variants={fadeInUp} viewport={{ once: true, margin: '-100px' }} initial="hidden" whileInView="visible">
+        <SectionCard
+          title="Batch Overview"
+          subtitle={`${displayBatches.length} batches${filteredBatchId ? ' (filtered)' : ''}`}
+          icon={Package}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {displayBatches && displayBatches.length > 0 ? displayBatches.slice(0, 6).map((batch) => (
+              batch && (
+                <DeviceStatusCard
+                  key={batch.id}
+                  device={{
+                    name: `${batch.cropName || 'Unknown'} - ${batch.batchId || 'N/A'}`,
+                    id: batch.id,
+                    status: batch.riskLevel === 'High' ? 'offline' : 
+                           batch.riskLevel === 'Medium' ? 'warning' : 'online',
+                    temperature: batch.temperature || 0,
+                    humidity: batch.humidity || 0,
+                    capacity: batch.quantity ? Math.round((batch.quantity / 1000) * 100) : 0,
+                    lastUpdate: batch.lastUpdate ? new Date(batch.lastUpdate).toLocaleString() : 'Unknown',
+                    location: batch.currentLocation || 'Unknown',
+                    destination: batch.destination || 'Unknown'
+                  }}
+                  onClick={() => selectBatch && selectBatch(batch)}
+                />
+              )
+            )) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                <Package size={48} className="mx-auto mb-2 opacity-50" />
+                <p>No batches found</p>
+                <p className="text-sm">Add your first batch to get started</p>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      </motion.div>
+
+      {/* Storage Health Summary */}
+      <motion.div variants={fadeInUp} viewport={{ once: true, margin: '-100px' }} initial="hidden" whileInView="visible">
+        <SectionCard
+          title="Storage Units"
+          subtitle={`${inStorageBatches.length} batches in storage`}
+          icon={Snowflake}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {inStorageBatches && inStorageBatches.length > 0 ? inStorageBatches.slice(0, 4).map((batch) => (
+              batch && (
+                <DeviceStatusCard
+                  key={batch.id}
+                  device={{
+                    name: `${batch.cropName || 'Unknown'} - ${batch.storageUnit || 'N/A'}`,
+                    id: batch.id,
+                    status: batch.riskLevel === 'High' ? 'offline' : 
+                           batch.riskLevel === 'Medium' ? 'warning' : 'online',
+                    temperature: batch.temperature || 0,
+                    humidity: batch.humidity || 0,
+                    capacity: batch.quantity ? Math.round((batch.quantity / 1000) * 100) : 0,
+                    lastUpdate: batch.lastUpdate ? new Date(batch.lastUpdate).toLocaleString() : 'Unknown',
+                    location: batch.currentLocation || 'Unknown'
+                  }}
+                  onClick={() => selectBatch && selectBatch(batch)}
+                />
+              )
+            )) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                <Snowflake size={48} className="mx-auto mb-2 opacity-50" />
+                <p>No batches in storage</p>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      </motion.div>
+
+      {/* Shipment Summary */}
+      <motion.div variants={fadeInUp} viewport={{ once: true, margin: '-100px' }} initial="hidden" whileInView="visible">
+        <SectionCard
+          title="Active Shipments"
+          subtitle={`${inTransitBatches.length} batches in transit`}
+          icon={Truck}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {inTransitBatches && inTransitBatches.length > 0 ? inTransitBatches.map((batch) => (
+              batch && (
+                <DeviceStatusCard
+                  key={batch.id}
+                  device={{
+                    name: `${batch.cropName || 'Unknown'} - ${batch.batchId || 'N/A'}`,
+                    id: batch.id,
+                    status: 'online',
+                    temperature: batch.temperature || 0,
+                    humidity: batch.humidity || 0,
+                    lastUpdate: batch.lastUpdate ? new Date(batch.lastUpdate).toLocaleString() : 'Unknown',
+                    location: batch.currentLocation || 'Unknown',
+                    destination: batch.destination || 'Unknown'
+                  }}
+                  onClick={() => selectBatch && selectBatch(batch)}
+                />
+              )
+            )) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                <Truck size={48} className="mx-auto mb-2 opacity-50" />
+                <p>No batches in transit</p>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      </motion.div>
+
+      {/* High Risk Alerts */}
+      <motion.div variants={fadeInUp} viewport={{ once: true, margin: '-100px' }} initial="hidden" whileInView="visible">
+        <SectionCard
+          title="High Risk Batches"
+          subtitle={`${highRiskBatches.length} batches require immediate attention`}
+          icon={AlertTriangle}
+        >
+          <div className="space-y-3">
+            {highRiskBatches && highRiskBatches.length > 0 ? highRiskBatches.map((batch) => (
+              batch && (
+                <AlertItem
+                  key={batch.id}
+                  alert={{
+                    id: batch.id,
+                    type: 'error',
+                    title: `High Risk: ${batch.cropName || 'Unknown'} - ${batch.batchId || 'N/A'}`,
+                    message: `Temperature: ${batch.temperature || 0}°C, Risk Level: ${batch.riskLevel || 'Unknown'}`,
+                    timestamp: batch.lastUpdate || new Date().toISOString(),
+                    deviceId: batch.id,
+                    acknowledged: false,
+                    resolved: false
+                  }}
+                  onAcknowledge={(id) => console.log('Acknowledge batch alert:', id)}
+                  onResolve={(id) => console.log('Resolve batch alert:', id)}
+                />
+              )
+            )) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertTriangle size={48} className="mx-auto mb-2 opacity-50" />
+                <p>No high-risk batches</p>
+                <p className="text-sm">All batches are within safe parameters</p>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      </motion.div>
+
+      {/* Feature Overview Cards */}
+      <motion.div variants={fadeInUp} viewport={{ once: true, margin: '-100px' }} initial="hidden" whileInView="visible">
+        <SectionCard
+          title="System Modules"
+          subtitle="Access all cold chain monitoring features"
+          icon={Activity}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {featureCards.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                variants={fadeInUp}
+                custom={index}
+                viewport={{ once: true, margin: '-100px' }}
+                initial="hidden"
+                whileInView="visible"
+                onClick={() => window.location.href = feature.path}
+                className="p-4 bg-white rounded-xl border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-md cursor-pointer"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <feature.icon size={20} className="text-primary" />
+                  </div>
+                  <h4 className="font-bold text-sm">{feature.title}</h4>
+                </div>
+                <p className="text-xs text-muted-foreground">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </SectionCard>
+      </motion.div>
+
+      {/* Mini Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div variants={fadeInUp} viewport={{ once: true, margin: '-100px' }} initial="hidden" whileInView="visible">
+          <ChartCard
+            title="Temperature Distribution"
+            subtitle="Across all batches"
+            icon={TrendingUp}
+          >
+            <div className="h-48 flex items-center justify-center bg-muted/20 rounded-lg border-2 border-dashed border-border">
+              <div className="text-center">
+                <TrendingUp size={32} className="text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Temperature chart placeholder</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Range: {batches && batches.length > 0 ? 
+                    `${Math.min(...batches.map(b => b.temperature || 0))}°C - ${Math.max(...batches.map(b => b.temperature || 0))}°C` 
+                    : 'No data'}
+                </p>
+              </div>
+            </div>
+          </ChartCard>
+        </motion.div>
+
+        <motion.div variants={fadeInUp} viewport={{ once: true, margin: '-100px' }} initial="hidden" whileInView="visible">
+          <ChartCard
+            title="Batch Status Overview"
+            subtitle="Current batch distribution"
+            icon={Package}
+          >
+            <div className="h-48 flex items-center justify-center bg-muted/20 rounded-lg border-2 border-dashed border-border">
+              <div className="text-center">
+                <Package size={32} className="text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Status chart placeholder</p>
+                <p className="text-xs text-muted-foreground mt-1">In Storage: {inStorageBatches?.length || 0} | In Transit: {inTransitBatches?.length || 0}</p>
+              </div>
+            </div>
+          </ChartCard>
+        </motion.div>
+      </div>
+
+      {/* Add Batch Modal */}
+      <AddBatchModal 
+        isOpen={showAddBatchModal} 
+        onClose={() => setShowAddBatchModal(false)} 
+      />
+    </motion.div>
+  )
 }

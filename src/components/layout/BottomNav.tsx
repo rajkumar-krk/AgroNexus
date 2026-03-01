@@ -1,10 +1,10 @@
 import { Home, Microscope, Droplets, ShoppingBag, BarChart3 } from 'lucide-react'
 
 const tabs = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'doctor', label: 'Doctor', icon: Microscope },
-    { id: 'irrigation', label: 'Water', icon: Droplets },
-    { id: 'market', label: 'Mandi', icon: ShoppingBag },
+    { id: 'home', label: 'Dashboard', icon: Home },
+    { id: 'doctor', label: 'Spoilage', icon: Microscope },
+    { id: 'irrigation', label: 'Storage', icon: Droplets },
+    { id: 'market', label: 'Transport', icon: ShoppingBag },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ]
 
