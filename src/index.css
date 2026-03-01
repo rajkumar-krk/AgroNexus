@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Noto+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Living Soil Theme Palette */
+    --background: 43 31% 97%; /* Soft Cream #FAF8F3 */
+    --foreground: 96 56% 10%; /* Very dark green */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 96 56% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 96 56% 10%;
+    
+    --primary: 96 56% 20%; /* Fertile Green #2D5016 */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 28 51% 28%; /* Earth Brown #6B4423 */
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 43 15% 90%;
+    --muted-foreground: 28 20% 40%;
+    
+    --accent: 38 92% 55%; /* Golden Harvest #F5A623 */
+    --accent-foreground: 96 56% 10%;
+    
+    --destructive: 6 78% 57%; /* Alert Red #E74C3C */
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 28 20% 85%;
+    --input: 28 20% 85%;
+    --ring: 96 56% 20%;
+
+    --sky: 212 74% 59%; /* Sky Blue #4A90E2 */
+    --sprout: 89 72% 48%; /* Fresh Sprout #7ED321 */
+
+    /* Charts */
+    --chart-1: 96 56% 20%;
+    --chart-2: 28 51% 28%;
+    --chart-3: 38 92% 55%;
+    --chart-4: 212 74% 59%;
+    --chart-5: 89 72% 48%;
+
+    /* Sidebar */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 96 56% 15%;
+    --sidebar-primary: 96 56% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 43 15% 90%;
+    --sidebar-accent-foreground: 96 56% 20%;
+    --sidebar-border: 28 20% 90%;
+    --sidebar-ring: 96 56% 20%;
+
+    /* Fonts */
+    --font-sans: 'Noto Sans', sans-serif;
+    --font-heading: 'Poppins', sans-serif;
+    --font-mono: 'Roboto Mono', monospace;
+
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 0 0% 10%; /* Deep Charcoal #1A1A1A */
+    --foreground: 43 31% 95%;
+    
+    --card: 0 0% 13%;
+    --card-foreground: 43 31% 95%;
+    
+    --popover: 0 0% 13%;
+    --popover-foreground: 43 31% 95%;
+    
+    --primary: 89 72% 48%; /* Fresh Sprout for visibility */
+    --primary-foreground: 0 0% 0%;
+    
+    --secondary: 28 40% 35%;
+    --secondary-foreground: 43 31% 95%;
+    
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 70%;
+    
+    --accent: 38 92% 55%;
+    --accent-foreground: 0 0% 10%;
+    
+    --destructive: 6 78% 57%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 89 72% 48%;
+
+    --sidebar: 0 0% 12%;
+    --sidebar-foreground: 43 31% 90%;
+    --sidebar-primary: 89 72% 48%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 89 72% 48%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 89 72% 48%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    @apply font-bold;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+}
+
+.earth-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+}

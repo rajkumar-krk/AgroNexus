@@ -11,6 +11,7 @@ import { Community } from './pages/Community'
 import { Analytics } from './pages/Analytics'
 import { CropAdvisor } from './pages/CropAdvisor'
 import { AIChatbot } from './components/AIChatbot'
+import { VoiceFAB } from './components/VoiceFAB'
 import { Spinner } from './components/ui/spinner'
 
 function App() {
@@ -111,6 +112,7 @@ function App() {
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
       <AIChatbot />
+      <VoiceFAB />
     </div>
   )
 }
