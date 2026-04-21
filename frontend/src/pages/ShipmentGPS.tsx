@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useBatch } from '../context/BatchContext';
+import { useThingSpeakContext } from '../context/ThingSpeakContext';
 import { BatchFilter } from '../components/BatchFilter';
+import { LiveGPSMap } from '../components/LiveGPSMap';
 import { api } from '../lib/api';
 import { 
-  MapPin, Navigation, Truck, Clock, AlertTriangle, Route, Thermometer, Battery
+  MapPin, Navigation, Truck, Clock, AlertTriangle, Route, Thermometer, Battery, ExternalLink, Wifi
 } from 'lucide-react';
 
 const fadeUp = {
@@ -17,6 +19,7 @@ const fadeUp = {
 
 export function ShipmentGPS() {
   const { batches, selectedBatch } = useBatch();
+  const { data: tsData, coordHistory, isConnected: tsConnected } = useThingSpeakContext();
   const [filteredBatchId, setFilteredBatchId] = useState<string | null>(selectedBatch?.id || null);
   const [shipment, setShipment] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -104,43 +107,48 @@ export function ShipmentGPS() {
 
       {shipment && !isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Map UI (Mocked) */}
+          {/* Main Map — Live Leaflet */}
           <motion.div variants={fadeUp} custom={1} initial="hidden" animate="visible" className="lg:col-span-2">
             <div className="glass-card rounded-3xl p-2 relative overflow-hidden h-full min-h-[400px]">
-              {/* Fake Map Background */}
-              <div className="absolute inset-0 bg-slate-100/50 dark:bg-slate-900/50 opacity-80" 
-                   style={{ backgroundImage: `radial-gradient(hsl(var(--foreground)/0.1) 1px, transparent 1px)`, backgroundSize: '20px 20px' }}>
-              </div>
-              
-              {/* Fake Road Line */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
-                 <path d="M 0,100 Q 150,300 300,150 T 800,200" stroke="hsl(var(--blue-500) / 0.3)" strokeWidth="6" strokeDasharray="10 10" fill="none" className="animate-[dash_60s_linear_infinite]" />
-              </svg>
+              {/* Live GPS Map */}
+              <div className="relative h-full min-h-[400px]">
+                <LiveGPSMap
+                  lat={tsData?.lat || shipment?.currentLocation?.lat || 0}
+                  lon={tsData?.lon || shipment?.currentLocation?.lng || 0}
+                  coordHistory={coordHistory}
+                  height="100%"
+                />
 
-              {/* Truck Marker pinned to center structurally, but mathematically updating */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-                <div className="bg-white px-3 py-1.5 rounded-full shadow-lg border border-border/50 text-xs font-bold flex items-center gap-1.5 mb-2 whitespace-nowrap">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  {Math.round(shipment.currentLocation.lat * 1000) / 1000}, {Math.round(shipment.currentLocation.lng * 1000) / 1000}
-                </div>
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-xl shadow-blue-600/30 border-4 border-white text-white">
-                  <Truck size={20} fill="currentColor" />
-                </div>
-              </div>
-
-              {/* Overlay HUD */}
-              <div className="absolute top-4 left-4 p-4 glass-card rounded-2xl max-w-[240px] shadow-2xl">
-                <h3 className="font-bold text-sm mb-1">{shipment.shipmentId}</h3>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-4 border-b border-border/50 pb-2">Status: {shipment.status}</p>
-                
-                <div className="space-y-3">
-                  <div>
-                     <p className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1"><MapPin size={10}/> Origin</p>
-                     <p className="text-sm font-medium">{shipment.origin}</p>
-                  </div>
-                  <div>
-                     <p className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1 mt-1"><Route size={10}/> Destination</p>
-                     <p className="text-sm font-medium text-emerald-600">{shipment.destination}</p>
+                {/* Overlay HUD */}
+                <div className="absolute top-4 left-4 z-[1000] p-4 bg-white/95 backdrop-blur-sm rounded-2xl max-w-[240px] shadow-2xl border border-border/50">
+                  <h3 className="font-bold text-sm mb-1">{shipment?.shipmentId || 'Live Tracking'}</h3>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-4 border-b border-border/50 pb-2">
+                    Status: {shipment?.status || (tsConnected ? 'Live' : 'Waiting')}
+                  </p>
+                  
+                  <div className="space-y-3">
+                    {shipment?.origin && (
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1"><MapPin size={10}/> Origin</p>
+                        <p className="text-sm font-medium">{shipment.origin}</p>
+                      </div>
+                    )}
+                    {shipment?.destination && (
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1 mt-1"><Route size={10}/> Destination</p>
+                        <p className="text-sm font-medium text-emerald-600">{shipment.destination}</p>
+                      </div>
+                    )}
+                    {tsData && tsData.lat !== 0 && (
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1 mt-1">
+                          <Wifi size={10} className="text-emerald-500" /> Live GPS
+                        </p>
+                        <p className="text-xs font-mono font-medium">
+                          {tsData.lat.toFixed(6)}, {tsData.lon.toFixed(6)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -171,8 +179,8 @@ export function ShipmentGPS() {
                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                      <Thermometer size={14}/> Reef Temp
                    </div>
-                   <span className={`font-mono font-bold ${activeBatch.temperature > 8 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                     {activeBatch.temperature.toFixed(1)}°C
+                   <span className={`font-mono font-bold ${(tsData?.temperature || activeBatch?.temperature || 0) > 8 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                     {tsData ? `${tsData.temperature.toFixed(1)}°C` : `${activeBatch?.temperature?.toFixed(1)}°C`}
                    </span>
                  </div>
                  

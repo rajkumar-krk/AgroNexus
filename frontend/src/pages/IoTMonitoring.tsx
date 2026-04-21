@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBatch } from '../context/BatchContext';
+import { useThingSpeakContext } from '../context/ThingSpeakContext';
 import { BatchFilter } from '../components/BatchFilter';
 import { api } from '../lib/api';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
 import { 
-  Activity, Thermometer, Droplets, Wind, Wifi, Battery, AlertTriangle, Radio
+  Activity, Thermometer, Droplets, Wind, Wifi, Battery, AlertTriangle, Radio, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 const fadeUp = {
@@ -20,9 +21,11 @@ const fadeUp = {
 
 export function IoTMonitoring() {
   const { batches, selectedBatch, selectBatch } = useBatch();
+  const tsContext = useThingSpeakContext();
   const [filteredBatchId, setFilteredBatchId] = useState<string | null>(null);
   const [telemetryData, setTelemetryData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [liveMode, setLiveMode] = useState(true); // ThingSpeak live mode toggle
 
   // Use the actively filtered batch, or fallback to the first available batch
   const activeDeviceBatch = useMemo(() => {
@@ -125,7 +128,19 @@ export function IoTMonitoring() {
             <p className="text-indigo-200 text-sm mt-1">Real-time environmental monitoring network</p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {/* ThingSpeak toggle */}
+            <button
+              onClick={() => setLiveMode(!liveMode)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                liveMode
+                  ? 'bg-cyan-500/20 border-cyan-400/30 text-cyan-100'
+                  : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'
+              }`}
+            >
+              {liveMode ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+              {liveMode ? 'ThingSpeak Live' : 'Batch Mode'}
+            </button>
             <BatchFilter selectedBatch={filteredBatchId} onBatchChange={setFilteredBatchId} />
           </div>
         </div>
@@ -157,32 +172,44 @@ export function IoTMonitoring() {
             
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-5">Focused Sensor Node</h3>
             
-            {activeDeviceBatch ? (
+            {activeDeviceBatch || (liveMode && tsContext.data) ? (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-extrabold text-foreground">{activeDeviceBatch.cropName}</h2>
-                  <p className="text-sm text-cyan-600 font-mono tracking-wide mb-1">ID: {activeDeviceBatch.batchId}</p>
+                  <h2 className="text-2xl font-extrabold text-foreground">
+                    {liveMode ? 'ThingSpeak Sensor' : activeDeviceBatch?.cropName}
+                  </h2>
+                  <p className="text-sm text-cyan-600 font-mono tracking-wide mb-1">
+                    {liveMode ? 'Live Feed' : `ID: ${activeDeviceBatch?.batchId}`}
+                  </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2">
-                    <Wifi size={12} className="text-emerald-500" />
-                    Online • Syncing • {activeDeviceBatch.currentLocation}
+                    <Wifi size={12} className={liveMode && tsContext.isConnected ? 'text-emerald-500' : 'text-emerald-500'} />
+                    {liveMode ? (tsContext.isConnected ? 'Connected • Live' : 'Disconnected') : `Online • Syncing • ${activeDeviceBatch?.currentLocation}`}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-muted/30 p-3 rounded-2xl flex flex-col items-center justify-center text-center">
                     <Thermometer size={20} className="text-blue-500 mb-1" />
-                    <p className="text-xl font-bold">{activeDeviceBatch.temperature.toFixed(1)}°C</p>
+                    <p className="text-xl font-bold">
+                      {liveMode && tsContext.data ? `${tsContext.data.temperature.toFixed(1)}°C` : `${activeDeviceBatch?.temperature?.toFixed(1)}°C`}
+                    </p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Temp</p>
                   </div>
                   <div className="bg-muted/30 p-3 rounded-2xl flex flex-col items-center justify-center text-center">
                     <Droplets size={20} className="text-teal-500 mb-1" />
-                    <p className="text-xl font-bold">{Math.round(activeDeviceBatch.humidity)}%</p>
+                    <p className="text-xl font-bold">
+                      {liveMode && tsContext.data ? `${Math.round(tsContext.data.humidity)}%` : `${Math.round(activeDeviceBatch?.humidity || 0)}%`}
+                    </p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Humidity</p>
                   </div>
                   <div className="bg-muted/30 p-3 rounded-2xl flex flex-col items-center justify-center text-center col-span-2">
-                    <Wind size={20} className={activeDeviceBatch.gasLevel === 'Elevated' ? 'text-amber-500 mb-1' : 'text-slate-500 mb-1'} />
-                    <p className="text-lg font-bold">{activeDeviceBatch.gasLevel}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Gas Integrity</p>
+                    <Wind size={20} className={liveMode && tsContext.data && tsContext.data.gas > 500 ? 'text-red-500 mb-1' : 'text-slate-500 mb-1'} />
+                    <p className="text-lg font-bold">
+                      {liveMode && tsContext.data ? tsContext.data.gas.toFixed(0) : (activeDeviceBatch?.gasLevel || 'Normal')}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                      {liveMode ? 'Gas Value' : 'Gas Integrity'}
+                    </p>
                   </div>
                 </div>
               </div>

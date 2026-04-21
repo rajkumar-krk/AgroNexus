@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useBatch } from '../context/BatchContext'
+import { useThingSpeakContext } from '../context/ThingSpeakContext'
 import { AddBatchModal } from '../components/AddBatchModal'
 import { BatchFilter } from '../components/BatchFilter'
 import { 
@@ -24,7 +25,11 @@ import {
   ArrowUpRight,
   Shield,
   Zap,
-  Eye
+  Eye,
+  Radio,
+  Wifi,
+  WifiOff,
+  Wind
 } from 'lucide-react'
 
 const fadeUp = {
@@ -36,7 +41,8 @@ const fadeUp = {
 }
 
 const quickLinks = [
-  { title: 'IoT Monitoring',  icon: Activity,     path: '/dashboard/iot-monitoring',      color: 'from-emerald-500 to-emerald-600', shadow: 'shadow-emerald-500/15' },
+  { title: 'Live Monitor',    icon: Radio,         path: '/dashboard/live-monitor',         color: 'from-cyan-500 to-blue-600',      shadow: 'shadow-cyan-500/15' },
+  { title: 'IoT Monitoring',  icon: Activity,      path: '/dashboard/iot-monitoring',       color: 'from-emerald-500 to-emerald-600', shadow: 'shadow-emerald-500/15' },
   { title: 'Cold Storage',    icon: Snowflake,     path: '/dashboard/cold-storage',         color: 'from-sky-500 to-blue-600',       shadow: 'shadow-sky-500/15' },
   { title: 'GPS Tracking',    icon: MapPin,        path: '/dashboard/shipment-gps',         color: 'from-violet-500 to-purple-600',  shadow: 'shadow-violet-500/15' },
   { title: 'Spoilage AI',     icon: FlaskConical,  path: '/dashboard/spoilage-detection',   color: 'from-amber-500 to-orange-600',   shadow: 'shadow-amber-500/15' },
@@ -60,6 +66,9 @@ export function Dashboard() {
   
   const [showAddBatchModal, setShowAddBatchModal] = useState(false)
   const [filteredBatchId, setFilteredBatchId] = useState(null)
+
+  // ThingSpeak live data
+  const { data: tsData, isConnected: tsConnected, activeAlerts, spoilageRisk, lastUpdated: tsLastUpdated } = useThingSpeakContext()
 
   const metrics = React.useMemo(() => {
     if (!batches.length) return { avgTemp: 0, avgHumidity: 0 }
@@ -128,6 +137,51 @@ export function Dashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* ═══ Live IoT Feed from ThingSpeak ═══ */}
+      {tsData && (
+        <motion.div variants={fadeUp} custom={1} initial="hidden" animate="visible">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-heading font-bold flex items-center gap-2">
+              <Radio size={16} className="text-cyan-500" />
+              Live ThingSpeak Feed
+              <span className={`ml-1 w-2 h-2 rounded-full ${tsConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+            </h2>
+            <button
+              onClick={() => navigate('/dashboard/live-monitor')}
+              className="text-xs font-semibold text-cyan-600 hover:underline flex items-center gap-1"
+            >
+              <Eye size={12} /> Full Monitor
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className={`bg-white rounded-xl border p-3 ${tsData.temperature > 10 ? 'border-red-300 bg-red-50/50' : 'border-border/60'}`}>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase">Temp</p>
+              <p className={`text-xl font-extrabold ${tsData.temperature > 10 ? 'text-red-600' : 'text-foreground'}`}>{tsData.temperature.toFixed(1)}°C</p>
+            </div>
+            <div className={`bg-white rounded-xl border p-3 ${tsData.humidity > 85 ? 'border-amber-300 bg-amber-50/50' : 'border-border/60'}`}>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase">Humidity</p>
+              <p className={`text-xl font-extrabold ${tsData.humidity > 85 ? 'text-amber-600' : 'text-foreground'}`}>{tsData.humidity.toFixed(1)}%</p>
+            </div>
+            <div className={`bg-white rounded-xl border p-3 ${tsData.gas > 500 ? 'border-red-300 bg-red-50/50' : 'border-border/60'}`}>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase">Gas</p>
+              <p className={`text-xl font-extrabold ${tsData.gas > 500 ? 'text-red-600' : 'text-foreground'}`}>{tsData.gas.toFixed(0)}</p>
+            </div>
+            <div className={`bg-white rounded-xl border border-border/60 p-3`}>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase">Risk</p>
+              <p className={`text-xl font-extrabold ${
+                spoilageRisk.color === 'rose' ? 'text-rose-600' : spoilageRisk.color === 'amber' ? 'text-amber-500' : 'text-emerald-500'
+              }`}>{spoilageRisk.level}</p>
+            </div>
+          </div>
+          {activeAlerts.length > 0 && (
+            <div className="mt-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2 animate-pulse">
+              <AlertTriangle size={14} />
+              {activeAlerts.length} active alert{activeAlerts.length > 1 ? 's' : ''} — View Live Monitor for details
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* ═══ Metric Cards ═══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

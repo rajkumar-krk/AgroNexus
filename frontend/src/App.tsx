@@ -10,6 +10,9 @@ import { HamburgerSidebar } from './components/layout/HamburgerSidebar'
 import { Sidebar } from './components/layout/Sidebar'
 import { FloatingMicButton } from './components/FloatingMicButton'
 import { AppProvider } from './context/AppContext'
+import { ThingSpeakProvider } from './context/ThingSpeakContext'
+import { AlertToastManager } from './components/AlertToastManager'
+import { Toaster } from 'react-hot-toast'
 import { BatchProvider } from './context/BatchContext'
 import { Dashboard } from './pages/Dashboard'
 import { IoTMonitoring } from './pages/IoTMonitoring'
@@ -20,6 +23,7 @@ import { Traceability } from './pages/Traceability'
 import { CloudAlerts } from './pages/CloudAlerts'
 import { StorageAnalytics } from './pages/StorageAnalytics'
 import { ShelfLife } from './pages/ShelfLife'
+import { LiveMonitor } from './pages/LiveMonitor'
 import { Profile } from './pages/Profile.jsx'
 
 import { AIChatbot } from './components/AIChatbot'
@@ -93,29 +97,42 @@ function App() {
   return (
     <AppProvider>
       <BatchProvider>
-        <Router>
-          <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardLayout userName={userName} />}>
-                <Route index element={<Dashboard />} />
-                <Route path="iot-monitoring" element={<IoTMonitoring />} />
-                <Route path="cold-storage" element={<ColdStorage />} />
-                <Route path="shipment-gps" element={<ShipmentGPS />} />
-                <Route path="spoilage-detection" element={<SpoilageDetection />} />
-                <Route path="traceability" element={<Traceability />} />
-                <Route path="cloud-alerts" element={<CloudAlerts />} />
-                <Route path="storage-analytics" element={<StorageAnalytics />} />
-                <Route path="shelf-life" element={<ShelfLife />} />
-                <Route path="profile" element={<Profile />} />
-                
-
-                
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-              </Route>
-            </Routes>
-          </ErrorBoundary>
-        </Router>
+        <ThingSpeakProvider>
+          <Router>
+            <ErrorBoundary>
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  style: {
+                    borderRadius: '16px',
+                    padding: '14px 20px',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                  },
+                }}
+              />
+              <AlertToastManager />
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardLayout userName={userName} />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="iot-monitoring" element={<IoTMonitoring />} />
+                  <Route path="cold-storage" element={<ColdStorage />} />
+                  <Route path="shipment-gps" element={<ShipmentGPS />} />
+                  <Route path="spoilage-detection" element={<SpoilageDetection />} />
+                  <Route path="traceability" element={<Traceability />} />
+                  <Route path="cloud-alerts" element={<CloudAlerts />} />
+                  <Route path="storage-analytics" element={<StorageAnalytics />} />
+                  <Route path="shelf-life" element={<ShelfLife />} />
+                  <Route path="live-monitor" element={<LiveMonitor />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Route>
+              </Routes>
+            </ErrorBoundary>
+          </Router>
+        </ThingSpeakProvider>
       </BatchProvider>
     </AppProvider>
   )

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useBatch } from '../context/BatchContext';
+import { useThingSpeakContext } from '../context/ThingSpeakContext';
 import { BatchFilter } from '../components/BatchFilter';
 import { api } from '../lib/api';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
 import { 
-  FlaskConical, AlertTriangle, ShieldCheck, Thermometer, Clock, ArrowRight, Biohazard, ArrowDownToLine
+  FlaskConical, AlertTriangle, ShieldCheck, Thermometer, Clock, ArrowRight, Biohazard, ArrowDownToLine, Wind, Radio
 } from 'lucide-react';
 
 const fadeUp = {
@@ -17,6 +21,7 @@ const fadeUp = {
 
 export function SpoilageDetection() {
   const { batches, selectedBatch, selectBatch } = useBatch();
+  const { data: tsData, history: tsHistory, spoilageRisk: tsSpoilageRisk } = useThingSpeakContext();
   const [filteredBatchId, setFilteredBatchId] = useState<string | null>(selectedBatch?.id || null);
   const [riskData, setRiskData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,11 +70,19 @@ export function SpoilageDetection() {
     );
   }
 
-  // Derive colors based on risk
-  const isHighRisk = riskData?.riskScore > 75;
-  const isMediumRisk = riskData?.riskScore > 40 && riskData?.riskScore <= 75;
+  // Derive colors based on risk — prefer live ThingSpeak risk when available
+  const effectiveRiskScore = tsData ? tsSpoilageRisk.score : (riskData?.riskScore || 0);
+  const isHighRisk = effectiveRiskScore > 75;
+  const isMediumRisk = effectiveRiskScore > 40 && effectiveRiskScore <= 75;
   const themeColor = isHighRisk ? 'rose' : isMediumRisk ? 'amber' : 'emerald';
   const themeHex = isHighRisk ? 'hsl(0 72% 55%)' : isMediumRisk ? 'hsl(38 92% 55%)' : 'hsl(152 60% 36%)';
+
+  // Gas trend chart data from ThingSpeak
+  const gasChartData = tsHistory.map((point: any) => ({
+    time: new Date(point.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    gas: point.gas,
+    temperature: point.temperature,
+  }));
 
   return (
     <div className="space-y-6 pb-20">
@@ -119,7 +132,7 @@ export function SpoilageDetection() {
                       <circle 
                         cx="50" cy="50" r="40" stroke={themeHex} strokeWidth="8" fill="transparent" 
                         strokeDasharray="251.2" 
-                        strokeDashoffset={251.2 - (251.2 * (riskData?.riskScore || 0)) / 100}
+                        strokeDashoffset={251.2 - (251.2 * (effectiveRiskScore || 0)) / 100}
                         className="transition-all duration-1000 ease-out"
                         strokeLinecap="round"
                       />
@@ -128,7 +141,7 @@ export function SpoilageDetection() {
                       <span className={`text-5xl font-extrabold tracking-tighter ${
                         isHighRisk ? 'text-rose-600' : isMediumRisk ? 'text-amber-500' : 'text-emerald-500'
                       }`}>
-                        {riskData?.riskScore || 0}
+                        {Math.round(effectiveRiskScore) || 0}
                       </span>
                       <span className="text-[10px] text-muted-foreground uppercase font-bold mt-1">out of 100</span>
                     </div>
@@ -137,7 +150,7 @@ export function SpoilageDetection() {
                   <div className={`mt-8 px-4 py-2 rounded-xl text-center w-full font-bold ${
                     isHighRisk ? 'bg-rose-50 text-rose-700' : isMediumRisk ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
                   }`}>
-                    {isHighRisk ? 'CRITICAL RISK' : isMediumRisk ? 'ELEVATED RISK' : 'OPTIMAL'}
+                    {tsData ? tsSpoilageRisk.level.toUpperCase() : (isHighRisk ? 'CRITICAL RISK' : isMediumRisk ? 'ELEVATED RISK' : 'OPTIMAL')}
                   </div>
                 </div>
               )}
@@ -207,6 +220,39 @@ export function SpoilageDetection() {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* ═══ Gas Trend Chart (ThingSpeak) ═══ */}
+      {gasChartData.length > 1 && (
+        <motion.div variants={fadeUp} custom={3} initial="hidden" animate="visible">
+          <div className="glass-card rounded-3xl p-5">
+            <h3 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
+              <Wind size={18} className="text-amber-600" />
+              Live Gas Trend
+              <span className="text-xs font-normal text-muted-foreground ml-1">
+                <Radio size={12} className="inline mr-1" />
+                ThingSpeak — {gasChartData.length} points
+              </span>
+            </h3>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={gasChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="sp-gasGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(38 92% 55%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(38 92% 55%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} interval="preserveStartEnd" />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} domain={[0, 'dataMax + 50']} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px' }} />
+                  <Area type="monotone" dataKey="gas" stroke="hsl(38 92% 50%)" strokeWidth={2.5} fillOpacity={1} fill="url(#sp-gasGrad)" animationDuration={300} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </motion.div>
       )}
     </div>
   );

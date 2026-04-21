@@ -26,6 +26,7 @@ import batchRoutes from './routes/batchRoutes.js';
 import telemetryRoutes from './routes/telemetryRoutes.js';
 import spoilageRoutes from './routes/spoilageRoutes.js';
 import shipmentRoutes from './routes/shipmentRoutes.js';
+import thingspeakRoutes from './routes/thingspeakRoutes.js';
 
 const app = express();
 
@@ -99,6 +100,7 @@ app.use('/api/v1/batches', batchRoutes);
 app.use('/api/v1/telemetry', telemetryRoutes);
 app.use('/api/v1/spoilage', spoilageRoutes);
 app.use('/api/v1/shipments', shipmentRoutes);
+app.use('/api/v1/thingspeak', thingspeakRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

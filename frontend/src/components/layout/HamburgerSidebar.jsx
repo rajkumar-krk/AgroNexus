@@ -8,11 +8,12 @@ import { AddBatchModal } from '../AddBatchModal'
 import { 
   LayoutDashboard, Activity, Snowflake, MapPin, FlaskConical, QrCode,
   Bell, BarChart3, Clock, User, Package, ChevronDown, Plus, X,
-  Store, Users, Sprout, Menu
+  Store, Users, Sprout, Menu, Radio
 } from 'lucide-react'
 
 const coldChainItems = [
   { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard/live-monitor', name: 'Live Monitor', icon: Radio },
   { path: '/dashboard/iot-monitoring', name: 'IoT Monitoring', icon: Activity },
   { path: '/dashboard/cold-storage', name: 'Cold Storage', icon: Snowflake },
   { path: '/dashboard/shipment-gps', name: 'Shipment GPS', icon: MapPin },
