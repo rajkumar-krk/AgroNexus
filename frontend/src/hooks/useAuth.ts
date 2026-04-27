@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
+let API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
+
+// Dummy-proof the URL in case it's misconfigured in Vercel
+if (API_URL.endsWith('/')) API_URL = API_URL.slice(0, -1)
+if (!API_URL.endsWith('/api/v1')) API_URL = API_URL + '/api/v1'
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
 export interface AuthUser {
