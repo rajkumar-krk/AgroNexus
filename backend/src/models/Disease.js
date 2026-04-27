@@ -27,7 +27,6 @@ const diseaseSchema = new mongoose.Schema(
 );
 
 diseaseSchema.index({ name: 'text', symptoms: 'text', description: 'text' });
-diseaseSchema.index({ cropTypes: 1 });
 
 const Disease = mongoose.model('Disease', diseaseSchema);
 export default Disease;

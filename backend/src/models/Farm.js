@@ -24,7 +24,7 @@ const farmSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-farmSchema.index({ owner: 1 });
+
 
 const Farm = mongoose.model('Farm', farmSchema);
 export default Farm;
