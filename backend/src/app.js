@@ -71,6 +71,16 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Root route to prevent 404 on base URL
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Welcome to the AgroNexus API Server! The server is running successfully.',
+        healthCheck: '/api/v1/health',
+        apiDocs: '/api/v1/'
+    });
+});
+
 // Health check
 app.get('/api/v1/health', (req, res) => {
     res.json({
