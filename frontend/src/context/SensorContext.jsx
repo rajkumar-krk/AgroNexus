@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
+let API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
+if (API_BASE.endsWith('/')) API_BASE = API_BASE.slice(0, -1)
+if (!API_BASE.endsWith('/api/v1')) API_BASE = API_BASE + '/api/v1'
 
 const POLL_INTERVAL = 5000 // 5 seconds
 const MAX_HISTORY = 50
