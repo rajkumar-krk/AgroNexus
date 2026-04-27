@@ -1,5 +1,31 @@
+import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { successResponse, errorResponse } from '../utils/apiResponse.js';
+import logger from '../utils/logger.js';
+
+/**
+ * Generate a signed JWT for authenticated sessions.
+ * @param {string} userId
+ * @returns {string} JWT token
+ */
+const generateToken = (userId) => {
+    return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRE || '7d',
+    });
+};
+
+/**
+ * Build a safe user payload (never leaks passwordHash).
+ */
+const safeUser = (user) => ({
+    _id: user._id,
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    language: user.language,
+    profilePhoto: user.profilePhoto,
+});
 
 /** 1. Register a new user */
 export const register = async (req, res) => {
@@ -19,24 +45,16 @@ export const register = async (req, res) => {
         });
         await user.save();
 
+        const token = generateToken(user._id);
+
         return successResponse(
             res,
-            {
-                user: {
-                    _id: user._id,
-                    fullName: user.fullName,
-                    email: user.email,
-                    phone: user.phone,
-                    role: user.role,
-                    language: user.language,
-                    profilePhoto: user.profilePhoto,
-                },
-            },
+            { user: safeUser(user), token },
             'Registration successful.',
             201
         );
     } catch (error) {
-        console.error('Register error:', error);
+        logger.error('Register error:', error.message);
         return errorResponse(res, error.message, 500);
     }
 };
@@ -55,19 +73,11 @@ export const login = async (req, res) => {
         const isMatch = await user.matchPassword(password);
         if (!isMatch) return errorResponse(res, 'Invalid email or password', 401);
 
-        return successResponse(res, {
-            user: {
-                _id: user._id,
-                fullName: user.fullName,
-                email: user.email,
-                phone: user.phone,
-                role: user.role,
-                language: user.language,
-                profilePhoto: user.profilePhoto,
-            },
-        });
+        const token = generateToken(user._id);
+
+        return successResponse(res, { user: safeUser(user), token });
     } catch (error) {
-        console.error('Login error:', error);
+        logger.error('Login error:', error.message);
         return errorResponse(res, error.message, 500);
     }
 };
@@ -103,19 +113,11 @@ export const googleAuth = async (req, res) => {
             await user.save();
         }
 
-        return successResponse(res, {
-            user: {
-                _id: user._id,
-                fullName: user.fullName,
-                email: user.email,
-                phone: user.phone,
-                role: user.role,
-                language: user.language,
-                profilePhoto: user.profilePhoto,
-            },
-        });
+        const token = generateToken(user._id);
+
+        return successResponse(res, { user: safeUser(user), token });
     } catch (error) {
-        console.error('Google Auth error:', error);
+        logger.error('Google Auth error:', error.message);
         return errorResponse(res, error.message, 500);
     }
 };
@@ -126,7 +128,7 @@ export const getMe = async (req, res) => {
         const { userId } = req.params;
         const user = await User.findById(userId);
         if (!user) return errorResponse(res, 'User not found', 404);
-        return successResponse(res, user);
+        return successResponse(res, safeUser(user));
     } catch (error) {
         return errorResponse(res, error.message, 500);
     }

@@ -86,3 +86,20 @@ export const updateAlertStatus = async (req, res) => {
         return errorResponse(res, error.message, 500);
     }
 };
+
+export const seedPestAlerts = async (req, res) => {
+    try {
+        const mocks = [
+            { pestType: "Fall Armyworm", cropAffected: "Maize", severity: "severe", description: "Large active outbreak detected on eastern border. Rapid lifecycle observed.", status: "active", location: { district: "Guntur", state: "Andhra Pradesh" }, broadcastRadius: 50000, isVerified: true },
+            { pestType: "Locust Swarm", cropAffected: "Wheat", severity: "moderate", description: "Approaching from the western grid. High wind carrying swarm elements.", status: "active", location: { district: "Bikaner", state: "Rajasthan" }, broadcastRadius: 100000, isVerified: true },
+            { pestType: "Aphids", cropAffected: "Tomato", severity: "spotted", description: "Early signs of aphid infestation in local greenhouses.", status: "contained", location: { district: "Nashik", state: "Maharashtra" }, broadcastRadius: 20000, isVerified: false }
+        ];
+        for(let m of mocks) {
+            m.reportedBy = req.user._id;
+            await PestAlert.create(m);
+        }
+        return successResponse(res, null, 'Pest alerts seeded');
+    } catch (error) {
+        return errorResponse(res, error.message, 500);
+    }
+};

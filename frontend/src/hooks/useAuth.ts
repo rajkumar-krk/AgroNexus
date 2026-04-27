@@ -25,9 +25,12 @@ export function useAuth() {
     setLoading(false)
   }, [])
 
-  const saveUser = useCallback((userData: AuthUser) => {
+  const saveUser = useCallback((userData: AuthUser, token?: string) => {
     setUser(userData)
     localStorage.setItem('agronexus_user', JSON.stringify(userData))
+    if (token) {
+      localStorage.setItem('agronexus_token', token)
+    }
   }, [])
 
   const signup = useCallback(async (fullName: string, email: string, password: string, phone?: string) => {
@@ -38,7 +41,7 @@ export function useAuth() {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || data.error || 'Registration failed')
-    saveUser(data.data.user)
+    saveUser(data.data.user, data.data.token)
     return data.data.user
   }, [saveUser])
 
@@ -50,7 +53,7 @@ export function useAuth() {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.message || data.error || 'Login failed')
-    saveUser(data.data.user)
+    saveUser(data.data.user, data.data.token)
     return data.data.user
   }, [saveUser])
 
@@ -60,7 +63,7 @@ export function useAuth() {
       const google = (window as any).google
       if (!google?.accounts?.id) {
         reject(new Error(
-          'Google Sign-In is not available. Please add http://localhost:3000 as an Authorized JavaScript Origin in your Google Cloud Console → Credentials → OAuth 2.0 Client ID.'
+          `Google Sign-In is not available. Please add ${window.location.origin} as an Authorized JavaScript Origin in your Google Cloud Console → Credentials → OAuth 2.0 Client ID.`
         ))
         return
       }
@@ -89,7 +92,7 @@ export function useAuth() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.message || 'Google auth failed')
-            saveUser(data.data.user)
+            saveUser(data.data.user, data.data.token)
             resolve(data.data.user)
           } catch (err) {
             reject(err)
@@ -109,7 +112,7 @@ export function useAuth() {
             reject(new Error('Google Sign-In was previously dismissed. Try clearing your browser cookies for accounts.google.com.'))
           } else {
             reject(new Error(
-              `Google Sign-In blocked (${reason}). Go to Google Cloud Console → Credentials → Your OAuth Client ID → Add http://localhost:3000 to "Authorized JavaScript origins".`
+              `Google Sign-In blocked (${reason}). Go to Google Cloud Console → Credentials → Your OAuth Client ID → Add ${window.location.origin} to "Authorized JavaScript origins".`
             ))
           }
         }
@@ -123,6 +126,7 @@ export function useAuth() {
   const logout = useCallback(() => {
     setUser(null)
     localStorage.removeItem('agronexus_user')
+    localStorage.removeItem('agronexus_token')
   }, [])
 
   return {

@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useThingSpeakContext } from '../context/ThingSpeakContext';
+import { useSensorContext } from '../context/SensorContext';
 import { LiveGPSMap } from '../components/LiveGPSMap';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
   Thermometer, Droplets, Wind, MapPin, Activity, Wifi, WifiOff,
-  AlertTriangle, ShieldCheck, Clock, ExternalLink, Radio, Gauge
+  AlertTriangle, ShieldCheck, Clock, ExternalLink, Radio, Gauge,
+  Brain, Loader2, Sprout, Zap
 } from 'lucide-react';
 
 const fadeUp = {
@@ -35,14 +36,27 @@ export function LiveMonitor() {
     activeAlerts,
     spoilageRisk,
     thresholds,
-    dismissAlert
-  } = useThingSpeakContext();
+    dismissAlert,
+    // AI Insights
+    latestInsight,
+    triggerAnalysis,
+    insights
+  } = useSensorContext();
+
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Format history for charts
   const chartData = history.map((point: any) => ({
     ...point,
     time: new Date(point.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
   }));
+
+  // Handle manual AI analysis trigger
+  const handleAnalyzeNow = async () => {
+    setAiLoading(true);
+    await triggerAnalysis();
+    setAiLoading(false);
+  };
 
   // Loading state
   if (loading && !data) {
@@ -52,8 +66,8 @@ export function LiveMonitor() {
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center animate-pulse">
             <Radio size={24} className="text-white" />
           </div>
-          <p className="text-sm text-muted-foreground font-medium">Connecting to ThingSpeak...</p>
-          <p className="text-xs text-muted-foreground">Fetching live sensor data</p>
+          <p className="text-sm text-muted-foreground font-medium">Connecting to Backend API...</p>
+          <p className="text-xs text-muted-foreground">Fetching live sensor data from database</p>
         </div>
       </div>
     );
@@ -89,7 +103,7 @@ export function LiveMonitor() {
                 )}
               </div>
               <span className={`text-xs font-bold uppercase tracking-wider ${isConnected ? 'text-emerald-100' : 'text-red-200'}`}>
-                {isConnected ? 'Live — ThingSpeak Connected' : 'Disconnected'}
+                {isConnected ? 'Live — Backend API Connected' : 'Disconnected'}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white leading-tight">
@@ -126,7 +140,7 @@ export function LiveMonitor() {
       </motion.div>
 
       {/* ═══ Metric Cards ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* Temperature */}
         <motion.div
           variants={fadeUp} custom={1} initial="hidden" animate="visible"
@@ -196,18 +210,36 @@ export function LiveMonitor() {
           <p className="text-[11px] text-muted-foreground mt-1 font-medium">Gas Value</p>
         </motion.div>
 
-        {/* GPS */}
+        {/* Moisture */}
         <motion.div
           variants={fadeUp} custom={4} initial="hidden" animate="visible"
+          className={`bg-white rounded-2xl border p-4 sm:p-5 hover-lift transition-all ${
+            data && data.moisture < thresholds.MOISTURE_LOW ? 'border-orange-300 bg-orange-50/50' : 'border-border/60'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${data && data.moisture < thresholds.MOISTURE_LOW ? 'bg-orange-100' : 'bg-lime-50'}`}>
+              <Sprout size={18} className={data && data.moisture < thresholds.MOISTURE_LOW ? 'text-orange-600' : 'text-lime-600'} />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-extrabold leading-none text-foreground">
+            {data ? `${data.moisture.toFixed(0)}%` : '—'}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1 font-medium">Moisture</p>
+        </motion.div>
+
+        {/* GPS */}
+        <motion.div
+          variants={fadeUp} custom={5} initial="hidden" animate="visible"
           className="bg-white rounded-2xl border border-border/60 p-4 sm:p-5 hover-lift"
         >
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
               <MapPin size={18} className="text-blue-600" />
             </div>
-            {data && data.lat !== 0 && (
+            {data && data.latitude !== 0 && (
               <button
-                onClick={() => window.open(`https://www.google.com/maps?q=${data.lat},${data.lon}`, '_blank')}
+                onClick={() => window.open(`https://www.google.com/maps?q=${data.latitude},${data.longitude}`, '_blank')}
                 className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center gap-1"
               >
                 <ExternalLink size={10} /> Maps
@@ -215,10 +247,10 @@ export function LiveMonitor() {
             )}
           </div>
           <p className="text-lg sm:text-xl font-extrabold text-foreground leading-none">
-            {data && data.lat !== 0 ? `${data.lat.toFixed(4)}` : '—'}
+            {data && data.latitude !== 0 ? `${data.latitude.toFixed(4)}` : '—'}
           </p>
           <p className="text-sm font-bold text-muted-foreground">
-            {data && data.lon !== 0 ? `${data.lon.toFixed(4)}` : '—'}
+            {data && data.longitude !== 0 ? `${data.longitude.toFixed(4)}` : '—'}
           </p>
           <p className="text-[11px] text-muted-foreground mt-1 font-medium">Lat / Lon</p>
         </motion.div>
@@ -227,7 +259,7 @@ export function LiveMonitor() {
       {/* ═══ Main Grid: Map + Spoilage AI ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Live GPS Map */}
-        <motion.div variants={fadeUp} custom={5} initial="hidden" animate="visible" className="lg:col-span-2">
+        <motion.div variants={fadeUp} custom={6} initial="hidden" animate="visible" className="lg:col-span-2">
           <div className="glass-card rounded-3xl p-2 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3">
               <h3 className="font-heading font-bold text-lg flex items-center gap-2">
@@ -239,16 +271,16 @@ export function LiveMonitor() {
               </span>
             </div>
             <LiveGPSMap
-              lat={data?.lat || 0}
-              lon={data?.lon || 0}
+              lat={data?.latitude || 0}
+              lon={data?.longitude || 0}
               coordHistory={coordHistory}
               height="380px"
             />
           </div>
         </motion.div>
 
-        {/* Spoilage AI Panel */}
-        <motion.div variants={fadeUp} custom={6} initial="hidden" animate="visible" className="lg:col-span-1">
+        {/* Spoilage AI Index */}
+        <motion.div variants={fadeUp} custom={7} initial="hidden" animate="visible" className="lg:col-span-1">
           <div className={`glass-card rounded-3xl p-6 h-full border-t-4 ${
             spoilageRisk.color === 'rose' ? 'border-t-rose-500' :
             spoilageRisk.color === 'amber' ? 'border-t-amber-500' : 'border-t-emerald-500'
@@ -258,7 +290,6 @@ export function LiveMonitor() {
               Spoilage AI Index
             </h3>
 
-            {/* Risk Gauge */}
             <div className="flex flex-col items-center">
               <div className="relative w-44 h-44 flex items-center justify-center">
                 <svg className="w-44 h-44 transform -rotate-90" viewBox="0 0 100 100">
@@ -292,7 +323,6 @@ export function LiveMonitor() {
                  spoilageRisk.level === 'Moderate' ? '⚠️ ELEVATED RISK' : '✅ OPTIMAL'}
               </div>
 
-              {/* Quick stats */}
               <div className="grid grid-cols-2 gap-3 mt-4 w-full">
                 <div className="bg-muted/30 rounded-xl p-3 text-center">
                   <Thermometer size={14} className="mx-auto mb-1 text-sky-500" />
@@ -310,9 +340,98 @@ export function LiveMonitor() {
         </motion.div>
       </div>
 
+      {/* ═══ Gemini AI Insights Panel ═══ */}
+      <motion.div variants={fadeUp} custom={8} initial="hidden" animate="visible">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-heading font-bold flex items-center gap-2">
+            <Brain size={18} className="text-violet-600" />
+            Gemini AI Insights
+            <span className="text-xs font-normal text-muted-foreground ml-1">
+              Powered by Google Gemini
+            </span>
+          </h2>
+          <button
+            onClick={handleAnalyzeNow}
+            disabled={aiLoading || !data}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md shadow-violet-500/20"
+          >
+            {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+            {aiLoading ? 'Analyzing...' : 'Analyze Now'}
+          </button>
+        </div>
+
+        {latestInsight ? (
+          <div className={`glass-card rounded-3xl p-6 border-l-4 ${
+            latestInsight.risk === 'Critical' ? 'border-l-rose-500' :
+            latestInsight.risk === 'High' ? 'border-l-red-500' :
+            latestInsight.risk === 'Medium' ? 'border-l-amber-500' : 'border-l-emerald-500'
+          }`}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Risk Level */}
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider mb-1">Risk Level</p>
+                <span className={`inline-block px-3 py-1.5 rounded-xl text-sm font-extrabold ${
+                  latestInsight.risk === 'Critical' ? 'bg-rose-100 text-rose-700' :
+                  latestInsight.risk === 'High' ? 'bg-red-100 text-red-700' :
+                  latestInsight.risk === 'Medium' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {latestInsight.risk === 'Critical' ? '☠️ ' : latestInsight.risk === 'High' ? '🔴 ' : latestInsight.risk === 'Medium' ? '🟡 ' : '🟢 '}
+                  {latestInsight.risk}
+                </span>
+              </div>
+
+              {/* Issue */}
+              <div>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider mb-1">Detected Issue</p>
+                <p className="text-sm font-medium text-foreground">{latestInsight.issue}</p>
+              </div>
+
+              {/* Recommendation */}
+              <div>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider mb-1">Recommendation</p>
+                <p className="text-sm font-medium text-foreground">{latestInsight.recommendation}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+              <span>Based on: T={latestInsight.basedOn?.temperature}°C | H={latestInsight.basedOn?.humidity}% | G={latestInsight.basedOn?.gas} | M={latestInsight.basedOn?.moisture}%</span>
+              <span>{new Date(latestInsight.createdAt).toLocaleString()}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="glass-card rounded-3xl p-8 text-center">
+            <Brain size={40} className="mx-auto mb-3 text-muted-foreground/30" />
+            <p className="font-medium text-muted-foreground">No AI insights yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Click "Analyze Now" to get Gemini AI analysis of current sensor data</p>
+          </div>
+        )}
+
+        {/* Recent Insights History */}
+        {insights.length > 1 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Recent Analysis History</p>
+            {insights.slice(1, 4).map((ins: any, i: number) => (
+              <div key={ins._id || i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  ins.risk === 'Critical' || ins.risk === 'High' ? 'bg-red-500' :
+                  ins.risk === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold truncate">{ins.issue}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{ins.recommendation}</p>
+                </div>
+                <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                  {new Date(ins.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
       {/* ═══ Active Alerts ═══ */}
       {activeAlerts.length > 0 && (
-        <motion.div variants={fadeUp} custom={7} initial="hidden" animate="visible">
+        <motion.div variants={fadeUp} custom={9} initial="hidden" animate="visible">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             <h2 className="text-lg font-heading font-bold text-red-600 flex items-center gap-2">
@@ -326,28 +445,30 @@ export function LiveMonitor() {
           <div className="space-y-3">
             {activeAlerts.map((alert: any) => (
               <div
-                key={alert.id}
+                key={alert._id}
                 className={`rounded-2xl p-4 flex items-center gap-4 transition-all ${
                   alert.severity === 'critical'
                     ? 'bg-red-50 border border-red-200 shadow-md shadow-red-100'
+                    : alert.severity === 'high'
+                    ? 'bg-orange-50 border border-orange-200'
                     : 'bg-amber-50 border border-amber-200'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  alert.severity === 'critical' ? 'bg-red-100' : 'bg-amber-100'
+                  alert.severity === 'critical' ? 'bg-red-100' : alert.severity === 'high' ? 'bg-orange-100' : 'bg-amber-100'
                 }`}>
-                  <AlertTriangle size={22} className={alert.severity === 'critical' ? 'text-red-600' : 'text-amber-600'} />
+                  <AlertTriangle size={22} className={alert.severity === 'critical' ? 'text-red-600' : alert.severity === 'high' ? 'text-orange-600' : 'text-amber-600'} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`font-semibold text-sm ${alert.severity === 'critical' ? 'text-red-800' : 'text-amber-800'}`}>
-                    {alert.title}
+                    {alert.type.charAt(0).toUpperCase() + alert.type.slice(1)} Alert
                   </p>
                   <p className={`text-xs mt-0.5 ${alert.severity === 'critical' ? 'text-red-600/70' : 'text-amber-600/70'}`}>
                     {alert.message}
                   </p>
                 </div>
                 <button
-                  onClick={() => dismissAlert(alert.id)}
+                  onClick={() => dismissAlert(alert._id)}
                   className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-border/50 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                 >
                   Dismiss
@@ -359,7 +480,7 @@ export function LiveMonitor() {
       )}
 
       {/* ═══ Trend Charts ═══ */}
-      <motion.div variants={fadeUp} custom={8} initial="hidden" animate="visible">
+      <motion.div variants={fadeUp} custom={10} initial="hidden" animate="visible">
         <h2 className="text-lg font-heading font-bold flex items-center gap-2 mb-4">
           <Activity size={18} className="text-cyan-600" />
           Sensor Trends
@@ -459,12 +580,12 @@ export function LiveMonitor() {
       </motion.div>
 
       {/* ═══ System Status Footer ═══ */}
-      <motion.div variants={fadeUp} custom={9} initial="hidden" animate="visible">
+      <motion.div variants={fadeUp} custom={11} initial="hidden" animate="visible">
         <div className="glass-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
               <ShieldCheck size={14} className="text-emerald-500" />
-              ThingSpeak Channel: {import.meta.env.VITE_THINGSPEAK_CHANNEL_ID || '3342325'}
+              Backend API: MongoDB + Gemini AI
             </div>
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
               <Activity size={14} className="text-cyan-500" />

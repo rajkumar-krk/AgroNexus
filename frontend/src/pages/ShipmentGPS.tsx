@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useBatch } from '../context/BatchContext';
-import { useThingSpeakContext } from '../context/ThingSpeakContext';
+import { useSensorContext } from '../context/SensorContext';
 import { BatchFilter } from '../components/BatchFilter';
 import { LiveGPSMap } from '../components/LiveGPSMap';
 import { api } from '../lib/api';
@@ -19,7 +19,7 @@ const fadeUp = {
 
 export function ShipmentGPS() {
   const { batches, selectedBatch } = useBatch();
-  const { data: tsData, coordHistory, isConnected: tsConnected } = useThingSpeakContext();
+  const { data: tsData, coordHistory, isConnected: tsConnected } = useSensorContext();
   const [filteredBatchId, setFilteredBatchId] = useState<string | null>(selectedBatch?.id || null);
   const [shipment, setShipment] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,8 +113,8 @@ export function ShipmentGPS() {
               {/* Live GPS Map */}
               <div className="relative h-full min-h-[400px]">
                 <LiveGPSMap
-                  lat={tsData?.lat || shipment?.currentLocation?.lat || 0}
-                  lon={tsData?.lon || shipment?.currentLocation?.lng || 0}
+                  lat={tsData?.latitude || shipment?.currentLocation?.lat || 0}
+                  lon={tsData?.longitude || shipment?.currentLocation?.lng || 0}
                   coordHistory={coordHistory}
                   height="100%"
                 />
@@ -139,13 +139,13 @@ export function ShipmentGPS() {
                         <p className="text-sm font-medium text-emerald-600">{shipment.destination}</p>
                       </div>
                     )}
-                    {tsData && tsData.lat !== 0 && (
+                    {tsData && tsData.latitude !== 0 && (
                       <div>
                         <p className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1 mt-1">
                           <Wifi size={10} className="text-emerald-500" /> Live GPS
                         </p>
                         <p className="text-xs font-mono font-medium">
-                          {tsData.lat.toFixed(6)}, {tsData.lon.toFixed(6)}
+                          {tsData.latitude.toFixed(6)}, {tsData.longitude.toFixed(6)}
                         </p>
                       </div>
                     )}

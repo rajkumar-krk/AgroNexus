@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useBatch } from '../context/BatchContext';
 import { 
-  QrCode, MapPin, Clock, CheckCircle2, Package, Thermometer, Droplets, ArrowRight, ShieldCheck, Truck, Warehouse
+  QrCode, MapPin, CheckCircle2, Thermometer, Droplets, ArrowRight, ShieldCheck, Truck, Warehouse
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 15 },
@@ -74,9 +75,35 @@ export function Traceability() {
           </div>
           
           <div className="glass-card rounded-2xl p-4 flex flex-col items-center justify-center text-center">
-             <QrCode size={48} className="text-emerald-600 mb-3" />
-             <p className="font-bold text-sm">Scan physical QR</p>
-             <p className="text-xs text-muted-foreground mt-1">Validate authenticity of delivered batches via mobile app.</p>
+             {activeBatch ? (
+               <>
+                 <div className="bg-white p-2.5 rounded-xl shadow-sm mb-3">
+                   <QRCodeSVG 
+                     value={`${window.location.origin}/trace/${activeBatch.id}`} 
+                     size={160} 
+                     level="H" 
+                     className="text-emerald-900"
+                   />
+                 </div>
+                 <p className="font-bold text-sm">Consumer QR Code</p>
+                 <p className="text-xs text-muted-foreground mt-1 mb-4 leading-relaxed">
+                   Print this QR for packing. Consumers scan it to view live freshness and GPS tracking.
+                 </p>
+                 <a 
+                   href={`/trace/${activeBatch.id}`}
+                   target="_blank"
+                   rel="noreferrer"
+                   className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                 >
+                   Open Consumer Portal <ArrowRight size={14} />
+                 </a>
+               </>
+             ) : (
+               <>
+                 <QrCode size={48} className="text-emerald-600 mb-3 opacity-50" />
+                 <p className="font-bold text-sm">No Batch Selected</p>
+               </>
+             )}
           </div>
         </motion.div>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useBatch } from '../context/BatchContext'
-import { useThingSpeakContext } from '../context/ThingSpeakContext'
+import { useSensorContext } from '../context/SensorContext'
 import { AddBatchModal } from '../components/AddBatchModal'
 import { BatchFilter } from '../components/BatchFilter'
 import { 
@@ -67,8 +67,8 @@ export function Dashboard() {
   const [showAddBatchModal, setShowAddBatchModal] = useState(false)
   const [filteredBatchId, setFilteredBatchId] = useState(null)
 
-  // ThingSpeak live data
-  const { data: tsData, isConnected: tsConnected, activeAlerts, spoilageRisk, lastUpdated: tsLastUpdated } = useThingSpeakContext()
+  // Live sensor data from backend
+  const { data: tsData, isConnected: tsConnected, activeAlerts, spoilageRisk, lastUpdated: tsLastUpdated, latestInsight } = useSensorContext()
 
   const metrics = React.useMemo(() => {
     if (!batches.length) return { avgTemp: 0, avgHumidity: 0 }
@@ -138,13 +138,13 @@ export function Dashboard() {
         </div>
       </motion.div>
 
-      {/* ═══ Live IoT Feed from ThingSpeak ═══ */}
+      {/* ═══ Live IoT Feed from Backend ═══ */}
       {tsData && (
         <motion.div variants={fadeUp} custom={1} initial="hidden" animate="visible">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-heading font-bold flex items-center gap-2">
               <Radio size={16} className="text-cyan-500" />
-              Live ThingSpeak Feed
+              Live Sensor Feed
               <span className={`ml-1 w-2 h-2 rounded-full ${tsConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
             </h2>
             <button

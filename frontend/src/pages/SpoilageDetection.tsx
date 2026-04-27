@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useBatch } from '../context/BatchContext';
-import { useThingSpeakContext } from '../context/ThingSpeakContext';
+import { useSensorContext } from '../context/SensorContext';
 import { BatchFilter } from '../components/BatchFilter';
 import { api } from '../lib/api';
 import {
@@ -21,7 +21,7 @@ const fadeUp = {
 
 export function SpoilageDetection() {
   const { batches, selectedBatch, selectBatch } = useBatch();
-  const { data: tsData, history: tsHistory, spoilageRisk: tsSpoilageRisk } = useThingSpeakContext();
+  const { data: tsData, history: tsHistory, spoilageRisk: tsSpoilageRisk } = useSensorContext();
   const [filteredBatchId, setFilteredBatchId] = useState<string | null>(selectedBatch?.id || null);
   const [riskData, setRiskData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,14 +70,14 @@ export function SpoilageDetection() {
     );
   }
 
-  // Derive colors based on risk — prefer live ThingSpeak risk when available
+  // Derive colors based on risk — prefer live sensor risk when available
   const effectiveRiskScore = tsData ? tsSpoilageRisk.score : (riskData?.riskScore || 0);
   const isHighRisk = effectiveRiskScore > 75;
   const isMediumRisk = effectiveRiskScore > 40 && effectiveRiskScore <= 75;
   const themeColor = isHighRisk ? 'rose' : isMediumRisk ? 'amber' : 'emerald';
   const themeHex = isHighRisk ? 'hsl(0 72% 55%)' : isMediumRisk ? 'hsl(38 92% 55%)' : 'hsl(152 60% 36%)';
 
-  // Gas trend chart data from ThingSpeak
+  // Gas trend chart data from backend sensor history
   const gasChartData = tsHistory.map((point: any) => ({
     time: new Date(point.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     gas: point.gas,
@@ -222,7 +222,7 @@ export function SpoilageDetection() {
         </div>
       )}
 
-      {/* ═══ Gas Trend Chart (ThingSpeak) ═══ */}
+      {/* ═══ Gas Trend Chart (Live Sensor) ═══ */}
       {gasChartData.length > 1 && (
         <motion.div variants={fadeUp} custom={3} initial="hidden" animate="visible">
           <div className="glass-card rounded-3xl p-5">
@@ -231,7 +231,7 @@ export function SpoilageDetection() {
               Live Gas Trend
               <span className="text-xs font-normal text-muted-foreground ml-1">
                 <Radio size={12} className="inline mr-1" />
-                ThingSpeak — {gasChartData.length} points
+                Backend DB — {gasChartData.length} points
               </span>
             </h3>
             <div className="h-[220px] w-full">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBatch } from '../context/BatchContext';
-import { useThingSpeakContext } from '../context/ThingSpeakContext';
+import { useSensorContext } from '../context/SensorContext';
 import { BatchFilter } from '../components/BatchFilter';
 import { api } from '../lib/api';
 import { 
@@ -21,11 +21,11 @@ const fadeUp = {
 
 export function IoTMonitoring() {
   const { batches, selectedBatch, selectBatch } = useBatch();
-  const tsContext = useThingSpeakContext();
+  const tsContext = useSensorContext();
   const [filteredBatchId, setFilteredBatchId] = useState<string | null>(null);
   const [telemetryData, setTelemetryData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [liveMode, setLiveMode] = useState(true); // ThingSpeak live mode toggle
+  const [liveMode, setLiveMode] = useState(true); // Backend live mode toggle
 
   // Use the actively filtered batch, or fallback to the first available batch
   const activeDeviceBatch = useMemo(() => {
@@ -122,14 +122,14 @@ export function IoTMonitoring() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
               </div>
-              <span className="text-cyan-100 text-xs font-bold uppercase tracking-wider">Live Telemetry</span>
+              <span className="text-cyan-100 text-xs font-bold uppercase tracking-wider">Live Telemetry — Database</span>
             </div>
             <h1 className="text-3xl font-heading font-extrabold text-white">IoT Sensor Hub</h1>
             <p className="text-indigo-200 text-sm mt-1">Real-time environmental monitoring network</p>
           </div>
           
           <div className="flex gap-2 items-center">
-            {/* ThingSpeak toggle */}
+            {/* Live toggle */}
             <button
               onClick={() => setLiveMode(!liveMode)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
@@ -139,7 +139,7 @@ export function IoTMonitoring() {
               }`}
             >
               {liveMode ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-              {liveMode ? 'ThingSpeak Live' : 'Batch Mode'}
+              {liveMode ? 'Live Feed' : 'Batch Mode'}
             </button>
             <BatchFilter selectedBatch={filteredBatchId} onBatchChange={setFilteredBatchId} />
           </div>
@@ -176,10 +176,10 @@ export function IoTMonitoring() {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-extrabold text-foreground">
-                    {liveMode ? 'ThingSpeak Sensor' : activeDeviceBatch?.cropName}
+                    {liveMode ? 'Live Sensor Feed' : activeDeviceBatch?.cropName}
                   </h2>
                   <p className="text-sm text-cyan-600 font-mono tracking-wide mb-1">
-                    {liveMode ? 'Live Feed' : `ID: ${activeDeviceBatch?.batchId}`}
+                    {liveMode ? 'Real-time from DB' : `ID: ${activeDeviceBatch?.batchId}`}
                   </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2">
                     <Wifi size={12} className={liveMode && tsContext.isConnected ? 'text-emerald-500' : 'text-emerald-500'} />

@@ -51,7 +51,7 @@ export function AIChatbot() {
 
             setMessages(prev => [
                 ...prev,
-                { role: 'assistant', content: result.response, timestamp: new Date() },
+                { role: 'assistant', content: result.data || 'No response', timestamp: new Date() },
             ])
         } catch (err: any) {
             setMessages(prev => [

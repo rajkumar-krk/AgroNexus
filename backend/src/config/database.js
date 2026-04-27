@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import logger from '../utils/logger.js';
 
 /**
  * Connect to MongoDB Atlas using the URI from environment variables.
@@ -7,19 +8,19 @@ import mongoose from 'mongoose';
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`❌ MongoDB connection failed: ${error.message}`);
+    logger.error(`MongoDB connection failed: ${error.message}`);
     process.exit(1);
   }
 };
 
 mongoose.connection.on('error', (err) => {
-  console.error(`MongoDB error: ${err.message}`);
+  logger.error(`MongoDB error: ${err.message}`);
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected');
+  logger.warn('MongoDB disconnected');
 });
 
 export default connectDB;

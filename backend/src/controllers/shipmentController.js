@@ -1,5 +1,6 @@
 import Shipment from '../models/Shipment.js';
 import Batch from '../models/Batch.js';
+import { sendCloudAlertEmail } from '../services/emailService.js';
 
 // @desc    Get all active shipments
 // @route   GET /api/v1/shipments
@@ -70,5 +71,47 @@ export const updateLocation = async (req, res) => {
     res.status(200).json({ success: true, data: shipment });
   } catch (error) {
     res.status(400).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Record a shipment stage event and send an email alert
+// @route   POST /api/v1/shipments/event
+export const recordShipmentEvent = async (req, res) => {
+  try {
+    const { stage, location } = req.body;
+
+    let event = "";
+    let status = "";
+    let details = "";
+
+    if (stage === "start") {
+      event = "🚚 Shipment Started";
+      status = "In Transit";
+      details = "Your crop shipment has been dispatched.";
+    } 
+    else if (stage === "half") {
+      event = "📍 Shipment Midway";
+      status = "50% Completed";
+      details = "Shipment has reached halfway point.";
+    } 
+    else if (stage === "delivered") {
+      event = "✅ Shipment Delivered";
+      status = "Completed";
+      details = "Shipment delivered successfully.";
+    }
+
+    if(event) {
+      await sendCloudAlertEmail({
+        event,
+        status,
+        location,
+        time: new Date().toLocaleString(),
+        details,
+      });
+    }
+
+    res.status(200).json({ success: true, message: "Shipment alert sent" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server Error' });
   }
 };

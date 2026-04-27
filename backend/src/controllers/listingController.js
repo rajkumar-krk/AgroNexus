@@ -102,3 +102,24 @@ export const getDemandsNearby = async (req, res) => {
         return errorResponse(res, error.message, 500);
     }
 };
+
+export const seedListings = async (req, res) => {
+    try {
+        const mocks = [
+            { title: "Premium Basmati Rice", cropType: "Rice", quantityKg: 500, askingPriceINR: 110, location: { district: "Karnal", state: "Haryana" }, status: "active" },
+            { title: "Organic Tomatoes", cropType: "Tomato", quantityKg: 200, askingPriceINR: 40, location: { district: "Pune", state: "Maharashtra" }, status: "active" },
+            { title: "Grade A Wheat", cropType: "Wheat", quantityKg: 1000, askingPriceINR: 28, location: { district: "Ludhiana", state: "Punjab" }, status: "active" }
+        ];
+        // Inject random farmer ID from req.user
+        for(let m of mocks) {
+            m.farmer = req.user._id;
+            m.farm = req.user._id; // mock farm ref
+            m.availableKg = m.quantityKg;
+            m.availableFrom = new Date();
+            await Listing.create(m);
+        }
+        return successResponse(res, null, 'Listings seeded');
+    } catch (error) {
+        return errorResponse(res, error.message, 500);
+    }
+};

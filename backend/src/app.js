@@ -27,24 +27,48 @@ import telemetryRoutes from './routes/telemetryRoutes.js';
 import spoilageRoutes from './routes/spoilageRoutes.js';
 import shipmentRoutes from './routes/shipmentRoutes.js';
 import thingspeakRoutes from './routes/thingspeakRoutes.js';
+import sensorRoutes from './routes/sensorRoutes.js';
+import alertRoutes from './routes/alertRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 const app = express();
 
 // Security headers
 app.use(helmet());
 
-// CORS
-app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
+// CORS — supports comma-separated CLIENT_URL for multiple origins
+const allowedOrigins = (process.env.CLIENT_URL || '')
+    .split(',')
+    .map((u) => u.trim())
+    .filter(Boolean);
 
-// Logging
-if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, Render health checks)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+}));
+
+// Logging — only in development
+if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiter
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { success: false, message: 'Too many requests. Try again later.' } });
+// Rate limiter — 100 requests per 15 min window per IP
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: process.env.NODE_ENV === 'development' ? 10000 : 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Too many requests. Try again later.' },
+});
 app.use('/api/', limiter);
 
 // Health check
@@ -101,6 +125,9 @@ app.use('/api/v1/telemetry', telemetryRoutes);
 app.use('/api/v1/spoilage', spoilageRoutes);
 app.use('/api/v1/shipments', shipmentRoutes);
 app.use('/api/v1/thingspeak', thingspeakRoutes);
+app.use('/api/v1/sensor', sensorRoutes);
+app.use('/api/v1/alerts', alertRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -10,8 +10,7 @@ import { HamburgerSidebar } from './components/layout/HamburgerSidebar'
 import { Sidebar } from './components/layout/Sidebar'
 import { FloatingMicButton } from './components/FloatingMicButton'
 import { AppProvider } from './context/AppContext'
-import { ThingSpeakProvider } from './context/ThingSpeakContext'
-import { AlertToastManager } from './components/AlertToastManager'
+import { SensorProvider } from './context/SensorContext'
 import { Toaster } from 'react-hot-toast'
 import { BatchProvider } from './context/BatchContext'
 import { Dashboard } from './pages/Dashboard'
@@ -21,10 +20,14 @@ import { ShipmentGPS } from './pages/ShipmentGPS'
 import { SpoilageDetection } from './pages/SpoilageDetection'
 import { Traceability } from './pages/Traceability'
 import { CloudAlerts } from './pages/CloudAlerts'
-import { StorageAnalytics } from './pages/StorageAnalytics'
 import { ShelfLife } from './pages/ShelfLife'
 import { LiveMonitor } from './pages/LiveMonitor'
+import { Marketplace } from './pages/Marketplace'
+import { KisanConnect } from './pages/KisanConnect'
+import { FarmAnalytics } from './pages/FarmAnalytics'
+import { AICropAdvisor } from './pages/AICropAdvisor'
 import { Profile } from './pages/Profile.jsx'
+import { ConsumerTraceView } from './pages/ConsumerTraceView'
 
 import { AIChatbot } from './components/AIChatbot'
 import { Spinner } from './components/ui/spinner'
@@ -65,7 +68,9 @@ function App() {
     )
   }
 
-  if (!isAuthenticated) {
+  const isPublicTraceRoute = window.location.pathname.startsWith('/trace/');
+
+  if (!isAuthenticated && !isPublicTraceRoute) {
     if (authMode === 'signup') {
       return (
         <SignUp
@@ -92,12 +97,12 @@ function App() {
     )
   }
 
-  const userName = user?.fullName || 'User'
+  const userName = user?.fullName || 'Guest'
 
   return (
     <AppProvider>
       <BatchProvider>
-        <ThingSpeakProvider>
+        <SensorProvider>
           <Router>
             <ErrorBoundary>
               <Toaster
@@ -112,27 +117,44 @@ function App() {
                   },
                 }}
               />
-              <AlertToastManager />
+
               <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardLayout userName={userName} />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="iot-monitoring" element={<IoTMonitoring />} />
-                  <Route path="cold-storage" element={<ColdStorage />} />
-                  <Route path="shipment-gps" element={<ShipmentGPS />} />
-                  <Route path="spoilage-detection" element={<SpoilageDetection />} />
-                  <Route path="traceability" element={<Traceability />} />
-                  <Route path="cloud-alerts" element={<CloudAlerts />} />
-                  <Route path="storage-analytics" element={<StorageAnalytics />} />
-                  <Route path="shelf-life" element={<ShelfLife />} />
-                  <Route path="live-monitor" element={<LiveMonitor />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                </Route>
+                {/* ═══ PUBLIC CONSUMER ROUTE ═══ */}
+                <Route path="/trace/:batchId" element={<ConsumerTraceView />} />
+
+                {/* ═══ PRIVATE DASHBOARD ROUTES ═══ */}
+                {isAuthenticated ? (
+                  <>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<DashboardLayout userName={userName} />}>
+                      <Route index element={<Dashboard />} />
+                      <Route path="iot-monitoring" element={<IoTMonitoring />} />
+                      <Route path="cold-storage" element={<ColdStorage />} />
+                      <Route path="shipment-gps" element={<ShipmentGPS />} />
+                      <Route path="spoilage-detection" element={<SpoilageDetection />} />
+                      <Route path="traceability" element={<Traceability />} />
+                      <Route path="cloud-alerts" element={<CloudAlerts />} />
+                      <Route path="shelf-life" element={<ShelfLife />} />
+                      <Route path="live-monitor" element={<LiveMonitor />} />
+                      
+                      {/* Agriculture Module Routes */}
+                      <Route path="market" element={<Marketplace />} />
+                      <Route path="community" element={<KisanConnect />} />
+                      <Route path="analytics" element={<FarmAnalytics />} />
+                      <Route path="advisor" element={<AICropAdvisor />} />
+                      
+                      <Route path="profile" element={<Profile />} />
+                      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    </Route>
+                  </>
+                ) : (
+                  // If unauthenticated and they try to go somewhere else, bounce them back
+                  <Route path="*" element={<Navigate to="/" replace onClick={() => window.location.href = '/'} />} />
+                )}
               </Routes>
             </ErrorBoundary>
           </Router>
-        </ThingSpeakProvider>
+        </SensorProvider>
       </BatchProvider>
     </AppProvider>
   )

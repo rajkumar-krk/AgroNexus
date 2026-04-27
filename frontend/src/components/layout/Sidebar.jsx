@@ -34,7 +34,6 @@ const navigationItems = [
   { path: '/dashboard/spoilage-detection', name: 'Spoilage AI', icon: FlaskConical },
   { path: '/dashboard/traceability', name: 'Traceability', icon: QrCode },
   { path: '/dashboard/cloud-alerts', name: 'Cloud Alerts', icon: Bell },
-  { path: '/dashboard/storage-analytics', name: 'Analytics', icon: BarChart3 },
   { path: '/dashboard/shelf-life', name: 'Shelf Life', icon: Clock },
 ]
 

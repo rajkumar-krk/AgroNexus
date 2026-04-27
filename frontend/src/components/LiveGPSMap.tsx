@@ -138,7 +138,7 @@ export function LiveGPSMap({ lat, lon, coordHistory = [], height = '400px', clas
         <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="text-center text-white">
             <p className="text-lg font-bold mb-1">📡 Waiting for GPS Signal</p>
-            <p className="text-sm opacity-75">No coordinates received from ThingSpeak yet</p>
+            <p className="text-sm opacity-75">No coordinates received from sensor yet</p>
           </div>
         </div>
       )}
